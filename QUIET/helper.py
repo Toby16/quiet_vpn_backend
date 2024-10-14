@@ -36,25 +36,11 @@ def decode_jwt(token: str):
         }
 
 
-def generate_token(data, USER_ID=None):
-    payload_list = [
-        "email", "first_name", "last_name",
-        "middle_name", "country"
-    ]
-    """
-    payload_list = [
-            "email", "phone", "country_code", "profile_photo",
-            "first_name", "last_name", "middle_name", "country"
-    ]
-    """
+def generate_token(data):
+    payload_list = ["email", "username"]
     payload = {}
     for i in payload_list:
         payload[i] = data[i]
-
-    if USER_ID is not None:
-        payload["user_id"] = USER_ID
-
-
     payload["expires"] = time.time() + 86400  # expiry time of 24 hrs
 
     #  [ TOKENIZATION ]
