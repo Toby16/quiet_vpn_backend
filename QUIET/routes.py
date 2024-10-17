@@ -10,7 +10,7 @@ from QUIET.helper import (
 )
 from QUIET.pydantic_models import (
     signup_User, signin_User,
-    get_User, update_user_model,
+    update_user_model, flutterwave_payment_pydantic_model,
     send_otp_model, verify_otp_model,
     change_password_model
 )
@@ -70,7 +70,7 @@ def sign_up(data: signup_User, db: db_dependency):
     if check_user is not None:
         raise HTTPXException(status_code=400, detail="User already exists")
 
-    check_user = db.query(User).filter(user.username == data.username).first()
+    check_user = db.query(User).filter(User.username == data.username).first()
     if check_user is not None:
         raise HTTPException(status_code=400, detail="User already exists")
 
@@ -156,3 +156,208 @@ def sign_in(data: signin_User, db: db_dependency):
         "token": token
     }
 
+
+# ------------------------------
+#  [ USER ACCOUNT AND PROFILE ]
+
+@app.get("/account/user_profile", status_code=status.HTTP_200_OK, tags=["USER"])
+@app.get("/account/user_profile/", status_code=status.HTTP_200_OK, tags=["USER"])
+def get_user_profile(db: db_dependency, token: str = Depends(get_token)):
+    # To get logged in user
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    #  [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"message": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
+
+
+    data = {}
+    data["email"] = check_user.email
+    data["username"] = check_user.username
+
+    return {
+        "statusCode": 200,
+        "data": data
+    }
+
+
+#  [ !use DELETE request to delete logged-in user profile! ]
+@app.delete("/account/user_profile", status_code=status.HTTP_200_OK, tags=["USER"])
+@app.delete("/account/user_profile/", status_code=status.HTTP_200_OK, tags=["USER"])
+def delete_user_profile(db: db_dependency, token: str = Depends(get_token)):
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"message": "Token Expired! Kindly login again!"})
+
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
+
+    db.delete(check_user)
+    db.commit()
+
+    return {
+        "statusCode": 200,
+        "message": "{} deleted successfully!".format(check_user.username)
+    }
+
+
+#  [ !use POST request to update logged-in user profile! ]
+@app.post("/account/user_profile", status_code=status.HTTP_200_OK, tags=["USER"])
+@app.post("/account/user_profile/", status_code=status.HTTP_200_OK, tags=["USER"])
+def update_user_profile(
+    data: update_user_model,
+    db: db_dependency,
+    token: str = Depends(get_token)):
+    """
+    Update user profile
+    """
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    #  [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"message": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
+    else:
+        # explicitly validate each data
+        if data.username is not None:
+            check_user.username = data.username
+
+    # commit changes if any
+    db.commit()
+
+    return {
+        "statusCode": 200,
+        "message": "successful! - user profile updated!"
+    }
+
+
+@app.post("/account/change_password", status_code=status.HTTP_200_OK, tags=["USER"])
+@app.post("/account/change_password/", status_code=status.HTTP_200_OK, tags=["USER"])
+def change_password(
+    data: change_password_model,
+    db: db_dependency,
+    token: str = Depends(get_token)):
+    #  [ DECODE JWT ]
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    #  [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400,
+                detail={"message": "An Error Occurred! Kindly request new OTP!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=404, detail={"message": "Account not found!"})
+
+    check_user.password = bcrypt_sha256.hash(data.password)
+    check_user.slug_ = (data.password)[::-1]
+    db.commit()
+
+    return {
+        "statusCode": 200,
+        "message": "password changed successfully!"
+    }
+
+
+# [ FLUTTERWAVE PAYMENT ]
+FLW_SECRET_KEY = os.getenv('FLW_SECRET_KEY')
+FLW_BASE_URL = 'https://api.flutterwave.com/v3'
+
+@app.post("/payment/flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
+    # [ DECODE JWT ]
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    # [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=404, detail={"err": "Account not found!"})
+
+    if check_user.is_activated is False:
+        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
+
+    headers = {
+        "Authorization": f"Bearer {FLW_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = data.dict()
+    data["tx_ref"] = "REF-{}".format(randint(100000000, 999999999))
+    data["currency"] = "NGN"
+    data["payment_options"] = "card, account, googlepay, applepay"
+    data["amount"] = str(data["amount"])
+
+    amount_format = ""
+
+    if "," in data["amount"]:
+        amount_format = (data["amount"]).replace(",","")
+    elif (data["amount"]).endswith(".00"):
+        amount_format = data["amount"][:-3]
+
+    if amount_format.endswith(".00"):
+        amount_format = amount_format[:-3]
+    elif "," in amount_format:
+        amount_format = (amount_format).replace(",","")
+
+    if len(amount_format) <= 0:
+        amount_format = data["amount"]
+
+    # flutterwave payment payload
+    payload = {
+        "tx_ref": data["tx_ref"],
+        # "amount": int(amount_format) * per_dollar,
+        "amount": int(amount_format),
+        "currency": data["currency"],
+        "redirect_url": data["redirect_url"],
+        "payment_options": data["payment_options"],
+        "customer": {
+            "email": check_user.email,
+            "name": "{} {}".format(check_user.first_name, check_user.last_name)
+        },
+        "customizations": {
+            "title": "QUEENS LUXURY Inc.",
+            "logo": "https://luravpn.nyc3.digitaloceanspaces.com/country_icon/.misc/1731.png"
+        }
+    }
+
+
+    try:
+        with httpx.Client(timeout=Timeout(30.0)) as client:
+            # set timeout to 30 seconds
+            response = client.post(f"{FLW_BASE_URL}/payments", json=payload, headers=headers)
+    except httpx.TimeoutException as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+    # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
+    return {
+        "statusCode": 200,
+        "message": "Payment created successfully",
+        "data": (response.json())["data"]
+    }
