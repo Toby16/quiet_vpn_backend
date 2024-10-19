@@ -1,0 +1,24 @@
+name: Deploy to QUIET VPN BACKEND
+
+on:
+  push:
+    branches:
+      - Toby
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy latest updates
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.HOST}}
+          username: ${{secrets.USERNAME}}
+          key: ${{secrets.KEY}}
+          script: |
+            echo '[ TRIGERRED! ]'
+            cd /root/.app/quiet_vpn_backend
+            git pull origin Toby
+            # systemctl restart queens.service
+            systemctl restart nginx
+            echo '[ DONE! ]'
