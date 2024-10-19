@@ -28,12 +28,12 @@ class verify_otp_model(BaseModel):
 
 class change_password_model(BaseModel):
     password: str = Field(examples=["changedtestpassword"])
-+
+
 
 # FLUTTERWAVE PAYMENT
 class flutterwave_payment_pydantic_model(BaseModel):
     amount: str = Field(examples=["3000"])
     days_paid: int = Field(examples=[3])
     server_ip: str = Field(examples=["127.0.0.1"])
-    server_location: str = Column(examples=["San Francisco, USA"+])
+    server_location: str = Field(examples=["San Francisco, USA"])
     redirect_url: str = Field(examples=["https://queens-stores.vercel.app/"])

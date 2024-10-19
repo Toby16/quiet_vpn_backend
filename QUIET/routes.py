@@ -295,8 +295,10 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
 
+    """
     if check_user.is_activated is False:
         raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
+    """
 
     headers = {
         "Authorization": f"Bearer {FLW_SECRET_KEY}",
@@ -334,18 +336,18 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         "payment_options": data["payment_options"],
         "customer": {
             "email": check_user.email,
-            "name": "{} {}".format(check_user.first_name, check_user.last_name)
+            "name": "{}".format(check_user.username)
         },
         "customizations": {
-            "title": "QUEENS LUXURY Inc.",
+            "title": "QUIET VPN Inc.",
             "logo": "https://luravpn.nyc3.digitaloceanspaces.com/country_icon/.misc/1731.png"
         }
     }
 
 
     try:
-        with httpx.Client(timeout=Timeout(30.0)) as client:
-            # set timeout to 30 seconds
+        with httpx.Client(timeout=Timeout(50.0)) as client:
+            # set timeout to 50 seconds
             response = client.post(f"{FLW_BASE_URL}/payments", json=payload, headers=headers)
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -359,5 +361,8 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
+        "days_paid": data["days_paid"],
+        "server_ip": data["server_ip"],
+        "server_location": data["server_location"],
         "data": (response.json())["data"]
     }
