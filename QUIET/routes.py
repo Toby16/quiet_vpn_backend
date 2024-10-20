@@ -418,7 +418,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     data_["tx_ref"] = output_["tx_ref"] or None
     data_["flw_ref"] = output_["flw_ref"] or None
     data_["amount"] = output_["amount"] or None
-    data_["currency"] = output_["NGN"] or None
+    data_["currency"] = output_["currency"] or None
     data_["payment_type"] = output_["payment_type"] or None
     data_["username"] = output_customer["name"] or None
     data_["email"] = output_customer["email"] or None
