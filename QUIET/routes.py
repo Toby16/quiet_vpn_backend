@@ -547,7 +547,7 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
     return {
         "statusCode": 200,
         "message": "Config ID found!",
-        "data": check_user.config
+        "data": user_config_obj.config
     }
 
 
