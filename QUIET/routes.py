@@ -441,6 +441,36 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             "message": "Payment Not Successful!"
         }
 
+    try:
+        # Save the config, server_ip, and days_paid to user_config table
+        user_config_obj = db.query(user_config).filter(
+            user_config.email == payload["email"],
+            user_config.server_ip == data.server_ip  # Match the server_ip as well
+        ).first()
+
+        if not user_config_obj:
+            # If no record exists, create a new one
+            user_config_obj = user_config(
+                email=payload["email"],
+                server_ip=data.server_ip,
+                config=response_2.json().get("config_name"),  # Assuming the config name is in the response
+                days_paid=data.days_paid
+            )
+            db.add(user_config_obj)
+        else:
+            # If a record exists, replace the existing one
+            user_config_obj.server_ip = data.server_ip
+            user_config_obj.config = response_2.json().get("config_name")  # Assuming the config name is in the response
+            user_config_obj.days_paid = data.days_paid
+    except Exception as e:
+        return {
+            "statusCode": 400,
+            "err": str(e)
+        }
+
+    # Commit the changes
+    db.commit()
+
     return {
         "statusCode": 200,
         "days_paid": data.days_paid,
@@ -456,9 +486,6 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     
     
 
-    
-        
-        
     
     
 
