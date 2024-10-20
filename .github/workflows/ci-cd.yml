@@ -19,6 +19,6 @@ jobs:
             echo '[ TRIGERRED! ]'
             cd /root/.app/quiet_vpn_backend
             git pull origin Toby
-            # systemctl restart queens.service
+            systemctl restart quiet.service
             systemctl restart nginx
             echo '[ DONE! ]'
