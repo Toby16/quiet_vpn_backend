@@ -411,7 +411,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 
     data_ = {}
     output_ = (response.json())["data"]
-    output_customer = (response.json())["customer"]
+    output_customer = (response.json())["data"]["customer"]
     
     data_["id"] = output_["id"] or None
     data_["status"] = output_["status"] or None
