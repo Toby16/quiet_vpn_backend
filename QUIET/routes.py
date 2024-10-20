@@ -536,7 +536,7 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
             return {
                 "statusCode": 404,
                 "err": "Item Not Found!",
-                "message": "item not found!"
+                "message": "no config found!"
             }
         
     except Exception as e:
