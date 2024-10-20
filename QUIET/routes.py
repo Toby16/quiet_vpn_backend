@@ -441,7 +441,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             "message": "Payment Not Successful!"
         }
 
-    return response_2
+    return response_2.json()
 
     return {
         "statusCode": 200,
