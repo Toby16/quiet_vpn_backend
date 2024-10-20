@@ -423,6 +423,26 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     data_["username"] = output_customer["name"] or None
     data_["email"] = output_customer["email"] or None
 
+    if data_["status"] == "successful":
+        try:
+            with httpx.Client(timeout=Timeout(50.0)) as client:
+                # set timeout to 50 seconds
+                response_2 = client.get("http://{server_ip}/create_peer/".format(
+                    server_ip=data.server_ip
+                ), headers=headers)
+        except httpx.TimeoutException as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    else:
+        return {
+            "statusCode": 400,
+            "err": "Payment Not Successful!",
+            "message": "Payment Not Successful!"
+        }
+
+    return response_2
+
     return {
         "statusCode": 200,
         "days_paid": data.days_paid,
