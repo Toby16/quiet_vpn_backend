@@ -14,7 +14,7 @@ from QUIET.pydantic_models import (
     update_user_model, flutterwave_payment_pydantic_model,
     verify_flutterwave_payment_pydantic_model,
     send_otp_model, verify_otp_model,
-    change_password_model
+    change_password_model, get_config_pydantic_model
 )
 
 from typing import Annotated
@@ -480,15 +480,6 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
         "config_data": response_2.json()["data"]
     }
 
-    
-    
-    
-    
-    
-
-    
-    
-
 
 @app.get("/server/get_all_servers", status_code=status.HTTP_200_OK, tags=["SERVERS"])
 @app.get("/server/get_all_servers/", status_code=status.HTTP_200_OK, tags=["SERVERS"])
@@ -509,8 +500,6 @@ def get_all_servers(db: db_dependency, token: str = Depends(get_token)):
 
     get_all_servers = db.query(servers).all()
 
-
-
     return {
         "statusCode": 200,
         "data": get_all_servers
@@ -518,6 +507,48 @@ def get_all_servers(db: db_dependency, token: str = Depends(get_token)):
 
 
 
+@app.post("/server/get_config", status_code=status.HTTP_200_OK, tags=["SERVERS"])
+@app.post("/server/get_config/", status_code=status.HTTP_200_OK, tags=["SERVERS"])
+def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
+    # To get logged in user
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    #  [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"message": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
+
+
+    try:
+        # Save the config, server_ip, and days_paid to user_config table
+        user_config_obj = db.query(user_config).filter(
+            user_config.email == payload["email"],
+            user_config.server_ip == data.server_ip  # Match the server_ip as well
+        ).first()
+
+        if not user_config_obj:
+            # If no record exists
+            return {
+                "statusCode": 404,
+                "err": "Item Not Found!",
+                "message": "item not found!"
+            }
+        
+    except Exception as e:
+        return {
+            "statusCode": 400,
+            "err": str(e)
+        }
+    return {
+        "statusCode": 200,
+        "message": "Config ID found!",
+        "data": check_user.config
+    }
 
 
 
