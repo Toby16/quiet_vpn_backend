@@ -412,8 +412,8 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model,
     if response.status_code != 200:
 		raise HTTPException(status_code=response.status_code, detail=response.json())
 
-	data = {}
-	output_ = (response.json())["data"]
+
+    data = {}output_ = (response.json())["data"]
 	output_customer = (response.json())["customer"]
 	data["id"] = output_["id"] or None
 	data["status"] = output_["status"] or None
@@ -424,8 +424,8 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model,
     data["payment_type"] = output_["payment_type"] or None
     data["username"] = output_customer["name"]
     data["email"] = output_customer["email"]
-								   
-    
+
+
     return {
         "statusCode": 200,
         "days_paid": data.days_paid,
