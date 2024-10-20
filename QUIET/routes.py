@@ -369,6 +369,80 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         "data": (response.json())["data"]
     }
 
+@app.get("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.get("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
+    # [ DECODE JWT ]
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    # [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=404, detail={"err": "Account not found!"})
+
+    """
+    if check_user.is_activated is False:
+        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
+    """
+
+    headers = {
+        "Authorization": f"Bearer {FLW_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        with httpx.Client(timeout=Timeout(50.0)) as client:
+            # set timeout to 50 seconds
+            response = client.get("{FLW_BASE_URL}/transactions/{transaction_id}/verify".format(
+                FLW_BASE_URL=FLW_BASE_URL, transaction_id=data.transaction_id
+            ), headers=headers)
+    except httpx.TimeoutException as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+    data_ = {}output_ = (response.json())["data"]
+    output_customer = (response.json())["customer"]
+    
+    data_["id"] = output_["id"] or None
+    data_["status"] = output_["status"] or None
+    data_["tx_ref"] = output_["tx_ref"] or None
+    data_["flw_ref"] = output_["flw_ref"] or None
+    data_["amount"] = output_["amount"] or None
+    data_["currency"] = output_["NGN"] or None
+    data_["payment_type"] = output_["payment_type"] or None
+    data_["username"] = output_customer["name"] or None
+    data_["email"] = output_customer["email"] or None
+
+    return {
+        "statusCode": 200,
+        "days_paid": data.days_paid,
+        "server_ip": data.server_ip,
+        "server_location": data.server_location,
+        "data": data
+    }
+
+    
+    
+    
+    
+    
+
+    
+        
+        
+    
+    
+
+
 @app.get("/server/get_all_servers", status_code=status.HTTP_200_OK, tags=["SERVERS"])
 @app.get("/server/get_all_servers/", status_code=status.HTTP_200_OK, tags=["SERVERS"])
 def get_all_servers(db: db_dependency, token: str = Depends(get_token)):
