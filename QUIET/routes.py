@@ -528,7 +528,7 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
         # Save the config, server_ip, and days_paid to user_config table
         user_config_obj = db.query(user_config).filter(
             user_config.email == payload["email"],
-            user_config.server_ip == data.server_ip  # Match the server_ip as well
+            user_config.server_ip == data.ip_address 
         ).first()
 
         if not user_config_obj:
