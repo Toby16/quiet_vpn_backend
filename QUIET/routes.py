@@ -369,8 +369,8 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         "data": (response.json())["data"]
     }
 
-@app.get("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.get("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     payload = decode_jwt(token)
