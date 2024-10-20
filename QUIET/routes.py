@@ -441,14 +441,13 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             "message": "Payment Not Successful!"
         }
 
-    return response_2.json()
-
     return {
         "statusCode": 200,
         "days_paid": data.days_paid,
         "server_ip": data.server_ip,
         "server_location": data.server_location,
-        "data": data_
+        "data": data_,
+        "config_data": response_2.json()["data"]
     }
 
     
