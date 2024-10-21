@@ -538,6 +538,17 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
                 "err": "Item Not Found!",
                 "message": "no config found!"
             }
+
+        try:
+            with httpx.Client(timeout=Timeout(50.0)) as client:
+                # set timeout to 50 seconds
+                response_2 = client.get("http://{server_ip}/get_config/{config_name}/".format(
+                    server_ip=data.ip_address, config_name=user_config_obj.config
+                ), headers=headers)
+        except httpx.TimeoutException as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
         
     except Exception as e:
         return {
@@ -546,8 +557,9 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
         }
     return {
         "statusCode": 200,
-        "message": "Config ID found!",
-        "data": user_config_obj.config
+        "message": "Config ID found",
+        "config_id": user_config_obj.config,
+        "data": response_2.json()["data"]
     }
 
 
