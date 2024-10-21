@@ -560,7 +560,7 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
         "statusCode": 200,
         "message": "Config ID found",
         "config_id": user_config_obj.config,
-        "data": response_2.json()  # the output seems to come out in a list containing the object
+        "data": response_2.json()[0]["config_data"]  # the output seems to come out in a list containing the object
     }
 
 
