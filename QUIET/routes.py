@@ -396,6 +396,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     }
 
     try:
+        # for flutterwave
         with httpx.Client(timeout=Timeout(50.0)) as client:
             # set timeout to 50 seconds
             response = client.get("{FLW_BASE_URL}/transactions/{transaction_id}/verify".format(
@@ -429,7 +430,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                 # set timeout to 50 seconds
                 response_2 = client.get("http://{server_ip}/create_peer/".format(
                     server_ip=data.server_ip
-                ), headers=headers)
+                ), headers={"Content-Type": "application/json"})
         except httpx.TimeoutException as e:
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
@@ -544,7 +545,7 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
                 # set timeout to 50 seconds
                 response_2 = client.get("http://{server_ip}/get_config/{config_name}/".format(
                     server_ip=data.ip_address, config_name=user_config_obj.config
-                ), headers=headers)
+                ), headers={"Content-Type": "application/json"})
         except httpx.TimeoutException as e:
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
