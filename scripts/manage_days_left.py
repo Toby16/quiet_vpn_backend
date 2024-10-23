@@ -54,19 +54,7 @@ def manage_user_configs():
                     else:
                         # Handle failed request (e.g., log it or raise an error)
                         print(f"Failed to revoke config file {config_file} on server {server_ip}")
-
-            """
-
-            # After the deduction, find users with config_file and days_paid == 0
-            users_with_zero_days = session.query(user_config).filter(
-                user_config.config.isnot(None),
-                user_config.days_paid == 0
-            ).all()
-
-            for user in users_with_zero_days:
-                # Remove the config file by setting it to None
-                user.config = None
-            """
+    
             # Commit the changes to the database
             session.commit()
     except Exception as e:
