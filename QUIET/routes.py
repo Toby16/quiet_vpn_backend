@@ -70,7 +70,7 @@ def sign_up(data: signup_User, db: db_dependency):
     #  check if user email and/or username already exists
     check_user = db.query(User).filter(User.email == data.email).first()
     if check_user is not None:
-        raise HTTPXException(status_code=400, detail="User already exists")
+        raise HTTPException(status_code=400, detail="User already exists")
 
     check_user = db.query(User).filter(User.username == data.username).first()
     if check_user is not None:
