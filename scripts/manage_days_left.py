@@ -35,13 +35,10 @@ def manage_user_configs():
                     config_file = user.config
                     server_ip = user.server_ip  # assuming you have this data
 
-
                     try:
                         with httpx.Client(timeout=Timeout(50.0)) as client:
                             # set timeout to 50 seconds
-                            response = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(
-                                server_ip=server_ip, config_file=config_file), headers={"Content-Type": "application/json"}
-                            )
+                            response = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=server_ip, config_file=config_file), headers={"Content-Type": "application/json"})
                     except httpx.TimeoutException as e:
                         print("An error occurred while requesting")
                         raise HTTPException(status_code=500, detail=str(e))
