@@ -49,7 +49,7 @@ class user_config(Base):
     __tablename__ = 'user_configs'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    email = Column(String(121), ForeignKey('users.email'), unique=True, index=True)
+    email = Column(String(121), ForeignKey('users.email'), index=True)
     # email = Column(String(121), unique=True, index=True)
     server_ip = Column(String(20))
     config = Column(String(15))
