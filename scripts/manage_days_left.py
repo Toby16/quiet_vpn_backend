@@ -16,7 +16,7 @@ import httpx
 from httpx import Timeout
 from datetime import datetime
 from sqlalchemy.orm import Session
-from QUIET.models import user_configs  # user_configs model is defined here
+from QUIET.models import user_config  # user_config model is defined here
 from database import engine  # Importing database engine
 
 def manage_user_configs():
@@ -24,7 +24,7 @@ def manage_user_configs():
         # Create a new database session
         with Session(engine) as session:
             # Query users who have a config_file and days_paid > 0
-            users = session.query(user_configs).filter(
+            users = session.query(user_config).filter(
                 user_config.config.isnot(None)
             ).all()
 
