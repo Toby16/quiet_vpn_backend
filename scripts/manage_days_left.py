@@ -6,6 +6,10 @@
 # for user's with config_file name and days_paid is 0, config_file becomes deleted (None).
 # for user's with config_file name and days_paid is not 0 (i.e. days_paid > 0), days_paid -= 1, we'll deduct one day out of it
 # (a last final check) re-check user's with config_file name and days_paid is 0 (after the substraction), config_file becomes deleted (None).
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 import pytz
 import httpx
