@@ -125,9 +125,9 @@ def sign_in(data: signin_User, db: db_dependency):
     data.email = email_validator(data.email)
     data = data.dict()
 
-    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    check_user = db.query(User).filter(User.email == data["email"]).first()
     if check_user is None:
-        check_user = db.query(User).filter(User.username == payload["email"]).first()
+        check_user = db.query(User).filter(User.username == data["email"]).first()
         if check_user is None:
             raise HTTPException(status_code=400, detail="invalid email or password!")
 
