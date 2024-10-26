@@ -9,6 +9,9 @@ from fastapi import Depends
 
 
 def email_validator(usr_email):
+    if "@" not in usr_email:
+        return usr_email  #  In case it's probably a username  |  this pretty much escapes the exception, but yeah
+
     try:
         emailinfo = validate_email(usr_email, check_deliverability=False)
         return (emailinfo.normalized).lower()
