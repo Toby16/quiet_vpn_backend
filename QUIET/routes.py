@@ -125,8 +125,6 @@ def sign_in(data: signin_User, db: db_dependency):
     data.email = email_validator(data.email)
     data = data.dict()
 
-    return data["email"]
-
     check_user = db.query(User).filter(User.email == data["email"]).first()
     if check_user is None:
         check_user = db.query(User).filter(User.username == data["email"]).first()
