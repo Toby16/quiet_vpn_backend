@@ -127,6 +127,7 @@ def sign_in(data: signin_User, db: db_dependency):
 
     check_user = db.query(User).filter(User.email == data["email"]).first()
     if check_user is None:
+        return data["email"]
         check_user = db.query(User).filter(User.username == data["email"]).first()
         if check_user is None:
             raise HTTPException(status_code=400, detail="invalid email or password!")
