@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 # List of allowed origins
-origins = ["*", "http://localhost:5173"]
+origins = ["http://localhost:5173", "https://quiet-vpn-frontend.vercel.app"]
 
 app.add_middleware(
     CORSMiddleware,
