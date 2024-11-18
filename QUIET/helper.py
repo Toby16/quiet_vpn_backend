@@ -31,12 +31,19 @@ def decode_jwt(token: str):
 
     try:
         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        # decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+        # Ensure the token includes "expires"
+        if "expires" not in decoded_token:
+            raise ValueError("Invalid Token")
         return decoded_token  # if decoded_token["expires"] >= time.time() else None
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
     except Exception as e:
-        return {
-            "statusCode": 400,
-            "err": str(e)
-        }
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 
 def generate_token(data):
