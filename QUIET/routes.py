@@ -641,7 +641,7 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
         for i in user_plans_data:
             user_plan_object["config"] = i.config
             user_plan_object["ip_address"] = i.server_ip
-            user_plan_object["days_left"] = i.days_left
+            user_plan_object["days_left"] = i.days_paid
 
             # to get  config details from the vpn server using config name
             try:
