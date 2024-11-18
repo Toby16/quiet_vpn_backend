@@ -167,8 +167,12 @@ def sign_in(data: signin_User, db: db_dependency):
 @app.get("/account/user_profile/", status_code=status.HTTP_200_OK, tags=["USER"])
 def get_user_profile(db: db_dependency, token: str = Depends(get_token)):
     # To get logged in user
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     #  [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -194,8 +198,12 @@ def get_user_profile(db: db_dependency, token: str = Depends(get_token)):
 @app.delete("/account/user_profile", status_code=status.HTTP_200_OK, tags=["USER"])
 @app.delete("/account/user_profile/", status_code=status.HTTP_200_OK, tags=["USER"])
 def delete_user_profile(db: db_dependency, token: str = Depends(get_token)):
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     if token_expiry <= time.time():
         raise HTTPException(status_code=400, detail={"message": "Token Expired! Kindly login again!"})
@@ -223,8 +231,12 @@ def update_user_profile(
     """
     Update user profile
     """
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     #  [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -255,8 +267,12 @@ def change_password(
     db: db_dependency,
     token: str = Depends(get_token)):
     #  [ DECODE JWT ]
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     #  [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -286,8 +302,11 @@ FLW_BASE_URL = 'https://api.flutterwave.com/v3'
 @app.post("/payment/flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
 
     # [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -382,8 +401,12 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
 @app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     # [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -494,8 +517,12 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 @app.get("/server/get_all_servers/", status_code=status.HTTP_200_OK, tags=["SERVERS"])
 def get_all_servers(db: db_dependency, token: str = Depends(get_token)):
     # To get logged in user
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     #  [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -520,8 +547,12 @@ def get_all_servers(db: db_dependency, token: str = Depends(get_token)):
 @app.post("/server/get_config/", status_code=status.HTTP_200_OK, tags=["SERVERS"])
 def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # To get logged in user
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
 
     #  [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -580,8 +611,11 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
     To get user's plans that aren't expired!
     """
     # To get logged in user
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
 
     #  [ CHECK TOKEN EXPIRY ]
     if token_expiry <= time.time():
@@ -592,11 +626,44 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
     if check_user is None:
         raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
 
-    user_plans = db.query(user_config).filter(user_config.email == check_user.email).all()
+    user_plans_data = db.query(user_config).filter(user_config.email == check_user.email).all()
+
+    try:
+        user_plan_list = []
+        user_plan_object = {
+            "ip_address": "",
+            "location": "",
+            "config": "",
+            "config_data": {},
+            "days_left": 0
+        }
+
+        for i in user_plans_data:
+            user_plan_object["config"] = i["config"]
+            user_plan_object["ip_address"] = i["ip_address"]
+            user_plan_object["days_left"] = i["days_left"]
+
+            # to get  config details from the vpn server using config name
+            try:
+                with httpx.Client(timeout=Timeout(50.0)) as client:
+                    # set timeout to 50 seconds
+                    response_2 = client.get("http://{server_ip}/get_config/{config_name}/".format(
+                        server_ip=i["ip_address"], config_name=i["config"]
+                     ), headers={"Content-Type": "application/json"})
+            except httpx.TimeoutException as e:
+                raise HTTPException(status_code=500, detail=str(e))
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+            user_plan_object["config_data"] = response_2.json()[0]["config_data"]
+
+            user_plan_list.append(user_plan_object)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     return {
         "statusCode": 200,
-        "data": user_plans
+        "data": user_plan_list
     }
 
 
