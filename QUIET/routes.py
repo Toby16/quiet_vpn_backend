@@ -573,6 +573,31 @@ def get_config(data: get_config_pydantic_model, db: db_dependency, token: str = 
     }
 
 
+@app.get("/server/get_user_plans", status_code=status.HTTP_200_OK, tags=["SERVERS"])
+@app.get("/server/get_user_plans/", status_code=status.HTTP_200_OK, tags=["SERVERS"])
+def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
+    """
+    To get user's plans that aren't expired!
+    """
+    # To get logged in user
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    #  [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"message": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
+
+    user_plans = db.query(user_config).filter(user_config.email == check_user.email).all()
+
+    return {
+        "statusCode": 200,
+        "data": user_plans
+    }
 
 
 
