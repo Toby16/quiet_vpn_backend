@@ -314,16 +314,13 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
     data["payment_options"] = "card, account, googlepay, applepay"
 
     # depending on ip, query db to get price per day
-    get_server_price = db.query(servers).filter(servers.server_ip == data["server_ip"]).first()
+    get_server = db.query(servers).filter(servers.server_ip == data["server_ip"]).first()
 
-    if get_server_price is None:
+    if get_server is None:
         raise HTTPException(status_code=500, detail="server not found!")
-        
-    return get_server_price.price
 
-
-    
-    data["amount"] = str(data["amount"])
+    # if price exists for the server
+    data["amount"] = str(get_server.price)
 
     amount_format = ""
 
@@ -377,7 +374,7 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         "message": "Payment created successfully",
         "days_paid": data["days_paid"],
         "server_ip": data["server_ip"],
-        "server_location": data["server_location"],
+        "server_location": get_server.location,
         "data": (response.json())["data"]
     }
 
