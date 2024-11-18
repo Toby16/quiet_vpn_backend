@@ -38,11 +38,23 @@ def decode_jwt(token: str):
             raise ValueError("Invalid Token")
         return decoded_token  # if decoded_token["expires"] >= time.time() else None
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
+        return {
+            "statusCode": 401,
+            "err": "Token has expired!"
+        }
+        # raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+        return {
+            "statusCode": 401,
+            "err": "Invalid Token!"
+        }
+        # raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return {
+            "statusCode": 400,
+            "err": str(e)
+        }
+        # raise HTTPException(status_code=400, detail=str(e))
 
 
 
