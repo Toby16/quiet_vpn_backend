@@ -464,19 +464,18 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                 email=payload["email"],
                 server_ip=data.server_ip,
                 config=response_2.json()["data"]["client_id"],  # Assuming the config name is in the response
-                days_paid=data.days_paid
+                days_paid=int(data.days_paid) + 1
             )
             db.add(user_config_obj)
         else:
             # If a record exists, replace the existing one
             user_config_obj.server_ip = data.server_ip
             user_config_obj.config = response_2.json()["data"]["client_id"]  # Assuming the config name is in the response
-            user_config_obj.days_paid = data.days_paid
+            user_config_obj.days_paid += int(data.days_paid) + 1  # add up the remaining days with the new one
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        return {
-            "statusCode": 400,
-            "err": str(e)
-        }
+        raise HTTPException(status_code=400, detail=str(e))
 
     # Commit the changes
     db.commit()
