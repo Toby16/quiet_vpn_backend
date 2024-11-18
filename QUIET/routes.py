@@ -639,16 +639,16 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
         }
 
         for i in user_plans_data:
-            user_plan_object["config"] = i["config"]
-            user_plan_object["ip_address"] = i["ip_address"]
-            user_plan_object["days_left"] = i["days_left"]
+            user_plan_object["config"] = i.config
+            user_plan_object["ip_address"] = i.ip_address
+            user_plan_object["days_left"] = i.days_left
 
             # to get  config details from the vpn server using config name
             try:
                 with httpx.Client(timeout=Timeout(50.0)) as client:
                     # set timeout to 50 seconds
                     response_2 = client.get("http://{server_ip}/get_config/{config_name}/".format(
-                        server_ip=i["ip_address"], config_name=i["config"]
+                        server_ip=i.ip_address, config_name=i.config
                      ), headers={"Content-Type": "application/json"})
             except httpx.TimeoutException as e:
                 raise HTTPException(status_code=500, detail=str(e))
