@@ -8,7 +8,11 @@ load_dotenv()
 
 
 URL_DATABASE = os.getenv("DATABASE_URL")
-engine = create_engine(URL_DATABASE)
+engine = create_engine(
+                      URL_DATABASE,
+                      pool_recycle=3600,  # Recycle connections every hour
+                      pool_pre_ping=True  # Test connections before using them
+                      )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
