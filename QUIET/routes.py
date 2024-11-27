@@ -492,6 +492,20 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             db.add(user_config_obj)
         else:
             # If a record exists, replace the existing one
+            # Delete from vpn server
+            try:
+                with httpx.Client(timeout=Timeout(50.0)) as client:
+                    response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=data.server_ip,
+                                             config_file=user_config_obj.config),
+                                             headers={"Content-Type": "application/json"}
+                                         )
+            except httpx.TimeoutException as e:
+                raise
+                # pass
+                # raise HTTPException(status_code=500, detail=str(e))
+                    
+
+            # Replace in DB
             user_config_obj.server_ip = data.server_ip
             user_config_obj.config = response_2.json()["data"]["client_id"]  # Assuming the config name is in the response
             user_config_obj.days_paid += int(data.days_paid) + 1  # add up the remaining days with the new one
