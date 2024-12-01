@@ -517,6 +517,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        raise
         raise HTTPException(status_code=400, detail=str(e))
 
     # Commit the changes
