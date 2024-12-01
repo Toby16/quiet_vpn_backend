@@ -487,6 +487,8 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             user_config.server_ip == data.server_ip  # Match the server_ip as well
         ).first()
 
+        return response_2.json()
+
         if not user_config_obj:
             # If no record exists, create a new one
             user_config_obj = user_config(
