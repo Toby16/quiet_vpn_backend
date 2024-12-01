@@ -480,7 +480,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             "message": "Payment Not Successful!"
         }
     
-    return response_2.json()
+    return response_2
 
     try:
         # Save the config, server_ip, and days_paid to user_config table
