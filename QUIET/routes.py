@@ -417,6 +417,12 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
 
+    token = None
+    token_obj = {
+        "email": check_user.email,
+        "username": check_user.username
+    }
+
     """
     if check_user.is_activated is False:
         raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
@@ -500,8 +506,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                                              headers={"Content-Type": "application/json"}
                                          )
             except httpx.TimeoutException as e:
-                raise
-                # pass
+                pass
                 # raise HTTPException(status_code=500, detail=str(e))
                     
 
@@ -516,9 +521,11 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 
     # Commit the changes
     db.commit()
+    token = generate_token(token_obj)  # generate user token
 
     return {
         "statusCode": 200,
+        "token": token,
         "days_paid": data.days_paid,
         "server_ip": data.server_ip,
         "server_location": data.server_location,
