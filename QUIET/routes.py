@@ -515,9 +515,9 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             user_config_obj.config = response_2.json()["data"]["client_id"]  # Assuming the config name is in the response
             user_config_obj.days_paid += int(data.days_paid) + 1  # add up the remaining days with the new one
     except ValueError as e:
+        raise
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise
         raise HTTPException(status_code=400, detail=str(e))
 
     # Commit the changes
