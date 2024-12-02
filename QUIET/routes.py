@@ -470,7 +470,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                     server_ip=data.server_ip
                 ), headers={"Content-Type": "application/json"})
         except httpx.TimeoutException as e:
-            raise
+            # raise
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
