@@ -470,6 +470,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                     server_ip=data.server_ip
                 ), headers={"Content-Type": "application/json"})
         except httpx.TimeoutException as e:
+            raise
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -479,8 +480,6 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             "err": "Payment Not Successful!",
             "message": "Payment Not Successful!"
         }
-    
-    return response_2
 
     try:
         # Save the config, server_ip, and days_paid to user_config table
