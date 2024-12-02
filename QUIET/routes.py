@@ -400,21 +400,11 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
 
 @app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 @app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
-    # [ DECODE JWT ]
-    try:
-        payload = decode_jwt(token)
-        token_expiry = payload.pop("expires")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid Token!")
-
-
-    # [ CHECK TOKEN EXPIRY ]
-    if token_expiry <= time.time():
-        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency):
+    username = data.username
 
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
-    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    check_user = db.query(User).filter(User.email == username).first()
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
 
