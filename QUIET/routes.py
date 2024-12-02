@@ -391,6 +391,7 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
+        "user": check_user.username,
         "days_paid": data["days_paid"],
         "server_ip": data["server_ip"],
         "server_location": get_server.location,
@@ -399,23 +400,19 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
 
 @app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 @app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
-    # [ DECODE JWT ]
-    try:
-        payload = decode_jwt(token)
-        token_expiry = payload.pop("expires")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid Token!")
-
-
-    # [ CHECK TOKEN EXPIRY ]
-    if token_expiry <= time.time():
-        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency):
+    username = data.username
 
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
-    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    check_user = db.query(User).filter(User.username == username).first()
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
+
+    token = None
+    token_obj = {
+        "email": check_user.email,
+        "username": check_user.username
+    }
 
     """
     if check_user.is_activated is False:
@@ -463,10 +460,13 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                 response_2 = client.get("http://{server_ip}/create_peer/".format(
                     server_ip=data.server_ip
                 ), headers={"Content-Type": "application/json"})
+
+                bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
         except httpx.TimeoutException as e:
+            # raise
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(data.server_ip))
     else:
         return {
             "statusCode": 400,
@@ -477,14 +477,14 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     try:
         # Save the config, server_ip, and days_paid to user_config table
         user_config_obj = db.query(user_config).filter(
-            user_config.email == payload["email"],
+            user_config.email == check_user.email,
             user_config.server_ip == data.server_ip  # Match the server_ip as well
         ).first()
 
         if not user_config_obj:
             # If no record exists, create a new one
             user_config_obj = user_config(
-                email=payload["email"],
+                email=check_user.email,
                 server_ip=data.server_ip,
                 config=response_2.json()["data"]["client_id"],  # Assuming the config name is in the response
                 days_paid=int(data.days_paid) + 1
@@ -500,8 +500,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
                                              headers={"Content-Type": "application/json"}
                                          )
             except httpx.TimeoutException as e:
-                raise
-                # pass
+                pass
                 # raise HTTPException(status_code=500, detail=str(e))
                     
 
@@ -516,9 +515,11 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 
     # Commit the changes
     db.commit()
+    token = generate_token(token_obj)  # generate user token
 
     return {
         "statusCode": 200,
+        "token": token,
         "days_paid": data.days_paid,
         "server_ip": data.server_ip,
         "server_location": data.server_location,
