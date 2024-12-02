@@ -404,7 +404,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
     username = data.username
 
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
-    check_user = db.query(User).filter(User.email == username).first()
+    check_user = db.query(User).filter(User.username == username).first()
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
 
