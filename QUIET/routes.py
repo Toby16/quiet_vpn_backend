@@ -391,6 +391,7 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
+        "user": check_user.username,
         "days_paid": data["days_paid"],
         "server_ip": data["server_ip"],
         "server_location": get_server.location,
