@@ -700,14 +700,16 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 def populatedb(db: Session = Depends(get_db)):
     data = [
         {
-            "server_ip": "127.0.0.1",
-            "location": "Local",
-            "price": "100.00"
+            "server_ip": "167.99.220.220",
+            "location": "Amsterdam, Netherlands",
+            "price": "255.00",
+            "flag_url": "https://flagcdn.com/w320/nl.png"
         },
         {
-            "server_ip": "127.0.0.1",
-            "location": "Local",
-            "price": "290.00"
+            "server_ip": "67.205.128.67",
+            "location": "New York, USA",
+            "price": "290.00",
+            "flag_url": "https://flagcdn.com/w320/us.png"
         }
     ]
 
@@ -719,7 +721,8 @@ def populatedb(db: Session = Depends(get_db)):
             new_server = servers(
                 server_ip=server_data["server_ip"],
                 location=server_data["location"],
-                price=server_data["price"]
+                price=server_data["price"],
+                flag_url=server_data["flag_url"]
             )
             db.add(new_server)
     
