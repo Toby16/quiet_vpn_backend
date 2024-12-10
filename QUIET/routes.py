@@ -370,7 +370,7 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         },
         "customizations": {
             "title": "QUIET VPN Inc.",
-            "logo": "https://luravpn.nyc3.digitaloceanspaces.com/country_icon/.misc/1731.png"
+            "logo": "https://luravpn.nyc3.digitaloceanspaces.com/country_icon/.misc/security.png"
         }
     }
 
