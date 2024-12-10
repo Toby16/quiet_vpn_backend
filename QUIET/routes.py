@@ -641,21 +641,33 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
     if check_user is None:
         raise HTTPException(status_code=400, detail={"message": "Invalid Token! Kindly login again!"})
 
-    user_plans_data = db.query(user_config).filter(user_config.email == check_user.email).all()
+    # user_plans_data = db.query(user_config).filter(user_config.email == check_user.email).all()
+    # Join `user_config` with `servers` to get the `flag_url`
+    user_plans_data = (
+        db.query(
+            user_config,
+            servers.flag_url,
+        )
+        .join(servers, user_config.server_ip == servers.server_ip)
+        .filter(user_config.email == check_user.email)
+        .all()
+    )
 
     try:
         user_plan_list = []
-        for i in user_plans_data:
+        for i, flag_url in user_plans_data:
             user_plan_object = {
                 "ip_address": "",
                 "location": "",
                 "config": "",
                 "config_data": {},
-                "days_left": 0
+                "days_left": 0,
+                "flag_url": ""
             }
             user_plan_object["config"] = i.config
             user_plan_object["ip_address"] = i.server_ip
             user_plan_object["days_left"] = i.days_paid
+            user_plan_object["flag_url"] = flag_url
 
             # to get  config details from the vpn server using config name
             try:
@@ -700,14 +712,16 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 def populatedb(db: Session = Depends(get_db)):
     data = [
         {
-            "server_ip": "127.0.0.1",
-            "location": "Local",
-            "price": "100.00"
+            "server_ip": "167.99.220.220",
+            "location": "Amsterdam, Netherlands",
+            "price": "255.00",
+            "flag_url": "https://flagcdn.com/w320/nl.png"
         },
         {
-            "server_ip": "127.0.0.1",
-            "location": "Local",
-            "price": "290.00"
+            "server_ip": "67.205.128.67",
+            "location": "New York, USA",
+            "price": "290.00",
+            "flag_url": "https://flagcdn.com/w320/us.png"
         }
     ]
 
@@ -719,7 +733,8 @@ def populatedb(db: Session = Depends(get_db)):
             new_server = servers(
                 server_ip=server_data["server_ip"],
                 location=server_data["location"],
-                price=server_data["price"]
+                price=server_data["price"],
+                flag_url=server_data["flag_url"]
             )
             db.add(new_server)
     

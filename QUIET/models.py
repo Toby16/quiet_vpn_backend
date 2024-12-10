@@ -43,6 +43,7 @@ class servers(Base):
     server_ip = Column(String(20), unique=True, index=True)
     location = Column(String(50))
     price = Column(String(10))
+    flag_url = Column(Text)
 
 
 class user_config(Base):
