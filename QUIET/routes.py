@@ -687,6 +687,7 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 
             user_plan_list.append(user_plan_object)
     except Exception as e:
+        raise
         raise HTTPException(status_code=400, detail=str(e))
 
     return {
