@@ -647,6 +647,7 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
         db.query(
             user_config,
             servers.flag_url,
+            servers.location,
         )
         .join(servers, user_config.server_ip == servers.server_ip)
         .filter(user_config.email == check_user.email)
@@ -668,6 +669,7 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
             user_plan_object["ip_address"] = i.server_ip
             user_plan_object["days_left"] = i.days_paid
             user_plan_object["flag_url"] = flag_url
+            user_plan_object["location"] = location
 
             # to get  config details from the vpn server using config name
             try:
