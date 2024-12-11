@@ -656,7 +656,7 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 
     try:
         user_plan_list = []
-        for i, flag_url in user_plans_data:
+        for i, flag_url, location in user_plans_data:
             user_plan_object = {
                 "ip_address": "",
                 "location": "",
@@ -687,7 +687,6 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 
             user_plan_list.append(user_plan_object)
     except Exception as e:
-        raise
         raise HTTPException(status_code=400, detail=str(e))
 
     return {
