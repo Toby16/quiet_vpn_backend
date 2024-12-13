@@ -943,16 +943,16 @@ def populatedb(db: Session = Depends(get_db)):
             "location": "London, United Kingdom",
             "price": "289.00",
             "flag_url": "https://flagcdn.com/w320/gb.png"
-        },
-        """
+        }
+    ]
+    """
         {
             "server_ip": "67.205.128.67",
             "location": "New York, USA",
             "price": "290.00",
             "flag_url": "https://flagcdn.com/w320/us.png"
         }
-        """
-    ]
+    """
 
     # Iterate over the data and populate the db
     for server_data in data:
