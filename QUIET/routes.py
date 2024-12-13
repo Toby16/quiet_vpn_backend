@@ -378,8 +378,8 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
 
 
     try:
-        with httpx.Client(timeout=Timeout(50.0)) as client:
-            # set timeout to 50 seconds
+        with httpx.Client(timeout=Timeout(60.0)) as client:
+            # set timeout to 60 seconds
             response = client.post(f"{FLW_BASE_URL}/payments", json=payload, headers=headers)
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -428,8 +428,8 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 
     try:
         # for flutterwave
-        with httpx.Client(timeout=Timeout(50.0)) as client:
-            # set timeout to 50 seconds
+        with httpx.Client(timeout=Timeout(60.0)) as client:
+            # set timeout to 60 seconds
             response = client.get("{FLW_BASE_URL}/transactions/{transaction_id}/verify".format(
                 FLW_BASE_URL=FLW_BASE_URL, transaction_id=data.transaction_id
             ), headers=headers)
@@ -457,7 +457,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 
     if data_["status"] == "successful":
         try:
-            with httpx.Client(timeout=Timeout(50.0)) as client:
+            with httpx.Client(timeout=Timeout(60.0)) as client:
                 # set timeout to 50 seconds
                 response_2 = client.get("http://{server_ip}/create_peer/".format(
                     server_ip=data.server_ip
@@ -496,7 +496,7 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             # If a record exists, replace the existing one
             # Delete from vpn server
             try:
-                with httpx.Client(timeout=Timeout(50.0)) as client:
+                with httpx.Client(timeout=Timeout(60.0)) as client:
                     response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=data.server_ip,
                                              config_file=user_config_obj.config),
                                              headers={"Content-Type": "application/json"}
@@ -644,8 +644,8 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
 
     # data = data.dict()
     try:
-        with httpx.Client(timeout=Timeout(30.0)) as client:
-            # set timeout to 30 seconds
+        with httpx.Client(timeout=Timeout(60.0)) as client:
+            # set timeout to 60 seconds
             response = client.get("{PAYSTACK_BASE_URL}/verify/{}".format(data.transaction_id), headers=headers)
             response = response.json()
     except httpx.TimeoutException as e:
