@@ -10,9 +10,11 @@ from QUIET.helper import (
     decode_jwt, get_token
 )
 from QUIET.pydantic_models import (
-    signup_User, signin_User,
-    update_user_model, flutterwave_payment_pydantic_model,
+    signup_User, signin_User, update_user_model,
+    flutterwave_payment_pydantic_model,
     verify_flutterwave_payment_pydantic_model,
+    paystack_payment_pydantic_model,
+    verify_paystack_payment_pydantic_model
     send_otp_model, verify_otp_model,
     change_password_model, get_config_pydantic_model
 )
@@ -502,7 +504,6 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
             except httpx.TimeoutException as e:
                 pass
                 # raise HTTPException(status_code=500, detail=str(e))
-                    
 
             # Replace in DB
             user_config_obj.server_ip = data.server_ip
@@ -526,6 +527,149 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
         "data": data_,
         "config_data": response_2.json()["data"]
     }
+
+
+
+# [ PAYSTACK PAYMENT ]
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
+PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
+
+@app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
+    # [ DECODE JWT ]
+    try:
+        payload = decode_jwt(token)
+        token_expiry = payload.pop("expires")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid Token!")
+
+    # [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=404, detail={"err": "Account not found!"})
+
+    """
+    if check_user.is_activated is False:
+        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
+    """
+
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = data.dict()
+
+    # depending on ip, query db to get price per day
+    get_server = db.query(servers).filter(servers.server_ip == data["server_ip"]).first()
+    if get_server is None:
+        raise HTTPException(status_code=500, detail="server not found!")
+
+    # if price exists for the server
+    data["amount"] = str(get_server.price)
+    amount_format = ""
+
+    if "," in data["amount"]:
+        amount_format = (data["amount"]).replace(",","")
+    elif (data["amount"]).endswith(".00"):
+        amount_format = data["amount"][:-3]
+    if amount_format.endswith(".00"):
+        amount_format = amount_format[:-3]
+    elif "," in amount_format:
+        amount_format = (amount_format).replace(",","")
+    if len(amount_format) <= 0:
+        amount_format = data["amount"]
+
+    # paystack payment payload
+    payload = {
+        "amount": str(int(data["amount"]) * 100 * int(data["days_paid"]),
+        "email": check_user.email,
+        "currency": "NGN",
+        "callback_url": data["redirect_url"]
+    }
+
+    try:
+        with httpx.Client(timeout=Timeout(60.0)) as client:
+            # set timeout to 60 seconds
+            response = client.post(f"{PAYSTACK_BASE_URL}/initialize", json=payload, headers=headers)
+    except httpx.TimeoutException as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+        
+    # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
+    return {
+        "statusCode": 200,
+        "message": "Payment created successfully",
+        "user": check_user.username,
+        "days_paid": data["days_paid"],
+        "server_ip": data["server_ip"],
+        "server_location": get_server.location,
+        "response": response.json()
+    }
+
+# [ VERIFY PAYSTACK PAYMENT ]
+@app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def verify_paystack_payment(data: verify_paystack_payment_model, db: db_dependency, token: str = Depends(get_token)):
+    # [ DECODE JWT ]
+    payload = decode_jwt(token)
+    token_expiry = payload.pop("expires")
+
+    # [ CHECK TOKEN EXPIRY ]
+    if token_expiry <= time.time():
+        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+
+    #  [ QUERY DB TO CONFIRM USER EXISTS ]
+    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    if check_user is None:
+        raise HTTPException(status_code=404, detail={"err": "Account not found!"})
+
+    if check_user.is_activated is False:
+        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
+
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"
+    }
+
+    data = data.dict()
+
+    # paystack payment payload
+    payload = {
+        "reference": data["reference"]
+    }
+
+    try:
+        with httpx.Client(timeout=Timeout(30.0)) as client:
+            # set timeout to 30 seconds
+            response = client.get(f"{PAYSTACK_BASE_URL}/verify/{data["reference"]}", headers=headers)
+    except httpx.TimeoutException as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
+
+    # query DB to get cart content for logged-in user
+    cart_content = db.query(User_Cart).filter(User_Cart.email == check_user.email).all()
+        
+    # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
+    return {
+        "statusCode": 200,
+        "message": "Payment created successfully",
+        "response": response.json(),
+        "data": (response.json())["data"],
+        "cart_content": cart_content
+    }
+
 
 
 @app.get("/server/get_all_servers", status_code=status.HTTP_200_OK, tags=["SERVERS"])
