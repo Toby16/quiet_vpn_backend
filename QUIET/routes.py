@@ -654,12 +654,97 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
-    response = response.json()
+
+    data_ = {}
+    output_ = (response.json())["data"]
+    output_customer = (response.json())["data"]["customer"]
+    
+    data_["id"] = output_["id"] or None
+    data_["status"] = output_["status"] or None
+    data_["reference"] = output_["reference"] or None
+    data_["amount"] = output_["amount"] or None
+    data_["currency"] = output_["currency"] or None
+    data_["payment_type"] = output_["channel"] or None
+    # data_["username"] = output_customer["name"] or None
+    data_["email"] = output_customer["email"] or None
+
+    if data_["status"] == "success":
+        try:
+            with httpx.Client(timeout=Timeout(60.0)) as client:
+                # set timeout to 50 seconds
+                response_2 = client.get("http://{server_ip}/create_peer/".format(
+                    server_ip=data.server_ip
+                ), headers={"Content-Type": "application/json"})
+
+                bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
+        except httpx.TimeoutException as e:
+            # raise
+            raise HTTPException(status_code=500, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(data.server_ip))
+    else:
+        return {
+            "statusCode": 400,
+            "err": "Payment Not Successful!",
+            "message": "Payment Not Successful!"
+        }
+
+    try:
+        # Save the config, server_ip, and days_paid to user_config table
+        user_config_obj = db.query(user_config).filter(
+            user_config.email == check_user.email,
+            user_config.server_ip == data.server_ip  # Match the server_ip as well
+        ).first()
+
+        if not user_config_obj:
+            # If no record exists, create a new one
+            user_config_obj = user_config(
+                email=check_user.email,
+                server_ip=data.server_ip,
+                config=response_2.json()["data"]["client_id"],  # Assuming the config name is in the response
+                days_paid=int(data.days_paid) + 1
+            )
+            db.add(user_config_obj)
+        else:
+            # If a record exists, replace the existing one
+            # Delete from vpn server
+            try:
+                with httpx.Client(timeout=Timeout(60.0)) as client:
+                    response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=data.server_ip,
+                                             config_file=user_config_obj.config),
+                                             headers={"Content-Type": "application/json"}
+                                         )
+            except httpx.TimeoutException as e:
+                pass
+                # raise HTTPException(status_code=500, detail=str(e))
+
+            # Replace in DB
+            user_config_obj.server_ip = data.server_ip
+            user_config_obj.config = response_2.json()["data"]["client_id"]  # Assuming the config name is in the response
+            user_config_obj.days_paid += int(data.days_paid) + 1  # add up the remaining days with the new one
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Commit the changes
+    db.commit()
+    token = generate_token(token_obj)  # generate user token
+
+    return {
+        "statusCode": 200,
+        "token": token,
+        "days_paid": data.days_paid,
+        "server_ip": data.server_ip,
+        "server_location": data.server_location,
+        "data": data_,
+        "config_data": response_2.json()["data"]
+    }
+
         
     # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
     return {
         "statusCode": 200,
-        "message": "Payment created successfully",
         # "response": response.json(),
         "data": response
     }
