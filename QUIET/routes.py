@@ -14,7 +14,7 @@ from QUIET.pydantic_models import (
     flutterwave_payment_pydantic_model,
     verify_flutterwave_payment_pydantic_model,
     paystack_payment_pydantic_model,
-    verify_paystack_payment_pydantic_model
+    verify_paystack_payment_pydantic_model,
     send_otp_model, verify_otp_model,
     change_password_model, get_config_pydantic_model
 )
