@@ -872,6 +872,7 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
             user_config,
             servers.flag_url,
             servers.location,
+
         )
         .join(servers, user_config.server_ip == servers.server_ip)
         .filter(user_config.email == check_user.email)
