@@ -586,7 +586,7 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
 
     # paystack payment payload
     payload = {
-        "amount": str(int(data["amount"]) * 100 * int(data["days_paid"]),
+        "amount": str(int(data["amount"]) * 100 * int(data["days_paid"])),
         "email": check_user.email,
         "currency": "NGN",
         "callback_url": data["redirect_url"]
