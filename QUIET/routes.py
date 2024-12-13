@@ -598,7 +598,6 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
         with httpx.Client(timeout=Timeout(60.0)) as client:
             # set timeout to 60 seconds
             response = client.post(f"{PAYSTACK_BASE_URL}/initialize", json=payload, headers=headers)
-            response = (response.json())["data"]
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
@@ -606,6 +605,8 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
+
+    response = (response.json())["data"]
         
     # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
     return {
