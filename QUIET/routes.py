@@ -300,8 +300,8 @@ def change_password(
 FLW_SECRET_KEY = os.getenv('FLW_SECRET_KEY')
 FLW_BASE_URL = 'https://api.flutterwave.com/v3'
 
-# @app.post("/payment/flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-# @app.post("/payment/flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     try:
@@ -400,8 +400,8 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         "data": (response.json())["data"]
     }
 
-# @app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-# @app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency):
     username = data.username
 
@@ -534,10 +534,8 @@ def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, 
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
 
-@app.post("/payment/flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-# @app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-# @app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     try:
@@ -620,10 +618,8 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
     }
 
 # [ VERIFY PAYSTACK PAYMENT ]
-@app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-# @app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-# @app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db_dependency):
     username = data.username
 
