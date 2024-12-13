@@ -618,7 +618,7 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
 # [ VERIFY PAYSTACK PAYMENT ]
 @app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 @app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def verify_paystack_payment(data: verify_paystack_payment_model, db: db_dependency, token: str = Depends(get_token)):
+def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     payload = decode_jwt(token)
     token_expiry = payload.pop("expires")
