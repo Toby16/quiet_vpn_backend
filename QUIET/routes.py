@@ -646,7 +646,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     try:
         with httpx.Client(timeout=Timeout(60.0)) as client:
             # set timeout to 60 seconds
-            response = client.get("{x}/verify/{y}".format(x=os.getenv("PAYSTACK_BASE_URL"), y=data.transaction_id), headers=headers)
+            response = client.get("{}/verify/{}".format(x=PAYSTACK_BASE_URL, y=data.transaction_id), headers=headers)
             response = response.json()
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
