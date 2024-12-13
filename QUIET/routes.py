@@ -596,6 +596,7 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
         with httpx.Client(timeout=Timeout(60.0)) as client:
             # set timeout to 60 seconds
             response = client.post(f"{PAYSTACK_BASE_URL}/initialize", json=payload, headers=headers)
+            response = (response.json())["data"]
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
@@ -612,44 +613,41 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
         "days_paid": data["days_paid"],
         "server_ip": data["server_ip"],
         "server_location": get_server.location,
-        "response": response.json()
+        "response": response
     }
 
 # [ VERIFY PAYSTACK PAYMENT ]
 @app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 @app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
-    # [ DECODE JWT ]
-    payload = decode_jwt(token)
-    token_expiry = payload.pop("expires")
-
-    # [ CHECK TOKEN EXPIRY ]
-    if token_expiry <= time.time():
-        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
+def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db_dependency):
+    username = data.username
 
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
-    check_user = db.query(User).filter(User.email == payload["email"]).first()
+    check_user = db.query(User).filter(User.username == username).first()
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
 
+    token = None
+    token_obj = {
+        "email": check_user.email,
+        "username": check_user.username
+    }
+
+    """
     if check_user.is_activated is False:
         raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
+    """
 
     headers = {
         "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"
     }
 
-    data = data.dict()
-
-    # paystack payment payload
-    payload = {
-        "reference": data["reference"]
-    }
-
+    # data = data.dict()
     try:
         with httpx.Client(timeout=Timeout(30.0)) as client:
             # set timeout to 30 seconds
-            response = client.get(f"{PAYSTACK_BASE_URL}/verify/{data["reference"]}", headers=headers)
+            response = client.get("{PAYSTACK_BASE_URL}/verify/{}".format(data.transaction_id), headers=headers)
+            response = response.json()
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
@@ -657,17 +655,13 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
-
-    # query DB to get cart content for logged-in user
-    cart_content = db.query(User_Cart).filter(User_Cart.email == check_user.email).all()
         
     # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
         "response": response.json(),
-        "data": (response.json())["data"],
-        "cart_content": cart_content
+        "data": response
     }
 
 
