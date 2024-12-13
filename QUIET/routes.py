@@ -939,17 +939,19 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 def populatedb(db: Session = Depends(get_db)):
     data = [
         {
-            "server_ip": "167.99.220.220",
-            "location": "Amsterdam, Netherlands",
-            "price": "255.00",
-            "flag_url": "https://flagcdn.com/w320/nl.png"
+            "server_ip": "134.122.107.207",
+            "location": "London, United Kingdom",
+            "price": "289.00",
+            "flag_url": "https://flagcdn.com/w320/gb.png"
         },
+        """
         {
             "server_ip": "67.205.128.67",
             "location": "New York, USA",
             "price": "290.00",
             "flag_url": "https://flagcdn.com/w320/us.png"
         }
+        """
     ]
 
     # Iterate over the data and populate the db
