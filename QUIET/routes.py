@@ -673,7 +673,6 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
-
     # after successful verification, change the transaction status to success/true
     check_transaction.trans_status = True
 
@@ -750,7 +749,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         raise HTTPException(status_code=400, detail=str(e))
 
     # Commit the changes
-    check_transaction = True
+    check_transaction.trans_status = True
     db.commit()
     token = generate_token(token_obj)  # generate user token
 
