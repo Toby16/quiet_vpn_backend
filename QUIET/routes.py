@@ -673,6 +673,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         raise HTTPException(status_code=response.status_code, detail=response.json())
 
     # after successful verification, change the transaction status to success/true
+    check_transaction.trans_status = True
 
     data_ = {}
     output_ = (response.json())["data"]
