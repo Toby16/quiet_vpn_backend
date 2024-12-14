@@ -64,6 +64,7 @@ class transaction(Base):
     server_ip - Column(String(20))
     location = Column(Text)
     days_paid = Column(Integer())
+    amount = Column(String(10))
     email = Column(String(121))
     username = Column(String(101))
 
