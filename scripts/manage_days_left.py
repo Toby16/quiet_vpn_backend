@@ -16,7 +16,7 @@ import httpx
 from httpx import Timeout
 from datetime import datetime
 from sqlalchemy.orm import Session
-from QUIET.models import user_config  # user_config model is defined here
+from QUIET.models import user_configi, transaction
 from database import engine  # Importing database engine
 
 def manage_user_configs():
@@ -55,6 +55,13 @@ def manage_user_configs():
                     else:
                         # Handle failed request (e.g., log it or raise an error)
                         print(f"Failed to revoke config file {config_file} on server {server_ip}")
+                        
+                    # Mark the corresponding transaction as expired
+                    trans = session.query(transaction).filter(
+                        transaction.server_ip == user.server_ip
+                    ).first()
+                    if trans:
+                        trans.expired = True
     
             # Commit the changes to the database
             session.commit()
