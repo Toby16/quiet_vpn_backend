@@ -50,7 +50,6 @@ class paystack_payment_pydantic_model(BaseModel):
     redirect_url: str = Field(examples=["https://google.com/"])
 
 class verify_paystack_payment_pydantic_model(BaseModel):
-    username: str = Field(examples=["test_username"])
     transaction_id: str = Field(examples=["vyc5twin3j"])
     trans_id: str = Field(examples=["vpn-123456789"])
     # days_paid: int = Field(examples=[3])
