@@ -93,11 +93,7 @@ def sign_up(data: signup_User, db: db_dependency):
         username = data["username"],
         password=hash_bcrypt,
         slug=slug_,
-        is_activated=False,
-        days_paid=0, # users will get free config for 2 days only after successful activation
-        server_ip="127.0.0.1",  # a placeholder
-        server_location="local",  # a placeholder
-        config_file="config_name"  # a placeholder
+        is_activated=False
     )
     db.add(new_user)
     db.commit()
@@ -605,15 +601,29 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
         raise HTTPException(status_code=response.status_code, detail=response.json())
 
     response = (response.json())["data"]
-        
+    trans_id_val = "vpn-{}".format(randint(100000000, 999999999))
+    # store new transaction to db
+    new_transaction = transaction(
+        trans_id=trans_id_val,
+        trans_status=False,
+        server_ip=get_server.server_ip,
+        location=get_server.location,
+        days_paid=data["days_paid"],
+        email=check_user.email,
+        username=check_user.username
+    )
+    db.add(new_transaction)
+    db.commit()
+
     # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
-        "user": check_user.username,
-        "days_paid": data["days_paid"],
-        "server_ip": data["server_ip"],
-        "server_location": get_server.location,
+        "trans_id": trans_id_val,
+        # "user": check_user.username,
+        # "days_paid": data["days_paid"],
+        # "server_ip": data["server_ip"],
+        # "server_location": get_server.location,
         "response": response
     }
 
@@ -621,7 +631,13 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
 @app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 @app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db_dependency):
-    username = data.username
+    trans_id = data.trans_id  # transaction id to validate payment on the backend
+
+    check_transaction = db.query(transaction).filter(transaction.trans_id == trans_id).first()
+    if check_transaction is None:
+        raise HTTPException(status_code=404, detail={"err": "Transaction not found!"})
+
+    username = check_transaction.username
 
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
     check_user = db.query(User).filter(User.username == username).first()
@@ -656,6 +672,8 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
 
+    # after successful verification, change the transaction status to success/true
+
     data_ = {}
     output_ = (response.json())["data"]
     output_customer = (response.json())["data"]["customer"]
@@ -674,7 +692,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             with httpx.Client(timeout=Timeout(60.0)) as client:
                 # set timeout to 50 seconds
                 response_2 = client.get("http://{server_ip}/create_peer/".format(
-                    server_ip=data.server_ip
+                    server_ip=check_transaction.server_ip
                 ), headers={"Content-Type": "application/json"})
 
                 bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
@@ -694,16 +712,16 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         # Save the config, server_ip, and days_paid to user_config table
         user_config_obj = db.query(user_config).filter(
             user_config.email == check_user.email,
-            user_config.server_ip == data.server_ip  # Match the server_ip as well
+            user_config.server_ip == check_transaction.server_ip  # Match the server_ip as well
         ).first()
 
         if not user_config_obj:
             # If no record exists, create a new one
             user_config_obj = user_config(
                 email=check_user.email,
-                server_ip=data.server_ip,
+                server_ip=check_transaction.server_ip,
                 config=response_2.json()["data"]["client_id"],  # Assuming the config name is in the response
-                days_paid=int(data.days_paid) + 1
+                days_paid=int(check_transaction.days_paid) + 1
             )
             db.add(user_config_obj)
         else:
@@ -711,7 +729,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             # Delete from vpn server
             try:
                 with httpx.Client(timeout=Timeout(60.0)) as client:
-                    response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=data.server_ip,
+                    response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=check_transaction.server_ip,
                                              config_file=user_config_obj.config),
                                              headers={"Content-Type": "application/json"}
                                          )
@@ -720,9 +738,9 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                 # raise HTTPException(status_code=500, detail=str(e))
 
             # Replace in DB
-            user_config_obj.server_ip = data.server_ip
+            user_config_obj.server_ip = check_transaction.server_ip
             user_config_obj.config = response_2.json()["data"]["client_id"]  # Assuming the config name is in the response
-            user_config_obj.days_paid += int(data.days_paid) + 1  # add up the remaining days with the new one
+            user_config_obj.days_paid += int(check_transaction.days_paid) + 1  # add up the remaining days with the new one
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -735,20 +753,21 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     return {
         "statusCode": 200,
         "token": token,
-        "days_paid": data.days_paid,
-        "server_ip": data.server_ip,
-        "server_location": data.server_location,
+        "days_paid": check_transaction.days_paid,
+        "server_ip": check_transaction.server_ip,
+        "server_location": check_transaction.server_location,
         "data": data_,
         "config_data": response_2.json()["data"]
     }
 
-        
+    """
     # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
     return {
         "statusCode": 200,
         # "response": response.json(),
         "data": response
     }
+    """
 
 
 
@@ -943,6 +962,18 @@ def populatedb(db: Session = Depends(get_db)):
             "location": "London, United Kingdom",
             "price": "289.00",
             "flag_url": "https://flagcdn.com/w320/gb.png"
+        },
+        {
+            "server_ip": "67.205.128.67",
+            "location": "New York, USA",
+            "price": "290.00",
+            "flag_url": "https://flagcdn.com/w320/us.png"
+        },
+        {   
+            "server_ip": "167.99.220.220",
+            "location": "Amsterdam, NL",
+            "price": "255.00",
+            "flag_url": "https://flagcdn.com/w320/nl.png"
         }
     ]
     """
