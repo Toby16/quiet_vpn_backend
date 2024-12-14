@@ -757,7 +757,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         "token": token,
         "days_paid": check_transaction.days_paid,
         "server_ip": check_transaction.server_ip,
-        "server_location": check_transaction.server_location,
+        "server_location": check_transaction.location,
         "data": data_,
         "config_data": response_2.json()["data"]
     }
