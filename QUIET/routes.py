@@ -750,6 +750,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         raise HTTPException(status_code=400, detail=str(e))
 
     # Commit the changes
+    check_transaction = True
     db.commit()
     token = generate_token(token_obj)  # generate user token
 
