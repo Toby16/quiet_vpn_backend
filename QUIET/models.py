@@ -61,23 +61,9 @@ class transaction(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     trans_id = Column(String(16))  # transaction id
     trans_status = Column(Boolean)  # transaction status
-    server_ip - Column(String(20))
+    server_ip = Column(String(20))
     location = Column(Text)
     days_paid = Column(Integer())
     amount = Column(String(10))
     email = Column(String(121))
     username = Column(String(101))
-
-    
-    """
-    Payment-Transaction SqlAlchemy Model ->
-    * id (int, auto_increment) *
-    * backend_transaction_id (trans_id) * | (str, "vpn-{random number}", will send to client-side for verification on success)
-    * verified_transaction_status (trans_status) * | (bool,  set its default to False, success in verification sets it to True)
-    * amount
-    * days_paid
-    * server_ip
-    * server_location
-    * user_email (email)
-    * user_username (username)
-    """
