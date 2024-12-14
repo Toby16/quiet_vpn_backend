@@ -1,0 +1,23 @@
+[
+    {
+        "item_no": 0,
+        "server_ip": "134.122.107.207",
+        "location": "London, United Kingdom",
+        "price": "289.00",
+        "flag_url": "https://flagcdn.com/w320/gb.png"
+    },
+    {
+        "item_no": 1,
+        "server_ip": "67.205.128.67",
+        "location": "New York, USA",
+        "price": "290.00",
+        "flag_url": "https://flagcdn.com/w320/us.png"
+    },
+    {   
+        "item_no": 2,
+        "server_ip": "167.99.220.220",
+        "location": "Amsterdam, NL",
+        "price": "255.00",
+        "flag_url": "https://flagcdn.com/w320/nl.png"
+    ]
+]
