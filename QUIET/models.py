@@ -17,11 +17,6 @@ class User(Base):
     slug = Column(String(200))
     is_activated = Column(Boolean)
 
-    days_paid = Column(Integer)
-    server_ip = Column(String(20))
-    server_location = Column(String(120))
-    config_file = Column(String(20))
-
     # Define relationship with user_config
     configs = relationship('user_config', back_populates='user', cascade="all, delete")
 
@@ -41,7 +36,7 @@ class servers(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     server_ip = Column(String(20), unique=True, index=True)
-    location = Column(String(50))
+    location = Column(Text)
     price = Column(String(10))
     flag_url = Column(Text)
 
@@ -59,6 +54,7 @@ class user_config(Base):
     # Relationship back to User
     user = relationship('User', back_populates='configs')
 
+
 class transaction(Base):
     __tablename__ = "transactions"
 
@@ -66,7 +62,7 @@ class transaction(Base):
     trans_id = Column(String(16))  # transaction id
     trans_status = Column(Boolean)  # transaction status
     server_ip - Column(String(20))
-    location = Column(String(20))
+    location = Column(Text)
     days_paid = Column(Integer())
     email = Column(String(121))
     username = Column(String(101))
