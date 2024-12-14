@@ -37,7 +37,7 @@ class user_otp(Base):
 
 
 class servers(Base):
-    __tablename__ = 'servers'  # Specify the table name here
+    __tablename__ = 'servers'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     server_ip = Column(String(20), unique=True, index=True)
@@ -58,3 +58,29 @@ class user_config(Base):
 
     # Relationship back to User
     user = relationship('User', back_populates='configs')
+
+class transaction(Base):
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    trans_id = Column(String(16))  # transaction id
+    trans_status = Column(String(20))  # transaction status
+    server_ip - Column(String(20))
+    location = Column(String(20))
+    days_paid = Column(Integer())
+    email = Column(String(121))
+    username = Column(String(101))
+
+    
+    """
+    Payment-Transaction SqlAlchemy Model ->
+    * id (int, auto_increment) *
+    * backend_transaction_id (trans_id) * | (str, "vpn-{random number}", will send to client-side for verification on success)
+    * verified_transaction_status (trans_status) * | (bool,  set its default to False, success in verification sets it to True)
+    * amount
+    * days_paid
+    * server_ip
+    * server_location
+    * user_email (email)
+    * user_username (username)
+    """
