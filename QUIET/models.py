@@ -61,6 +61,7 @@ class transaction(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     trans_id = Column(String(16))  # transaction id
     trans_status = Column(Boolean)  # transaction status
+    expired = Column(Boolean)  # default=Falsee, expired=True, failed/invalid=True
     server_ip = Column(String(20))
     location = Column(Text)
     days_paid = Column(Integer())
