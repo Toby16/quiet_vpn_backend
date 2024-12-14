@@ -52,9 +52,10 @@ class paystack_payment_pydantic_model(BaseModel):
 class verify_paystack_payment_pydantic_model(BaseModel):
     username: str = Field(examples=["test_username"])
     transaction_id: str = Field(examples=["vyc5twin3j"])
-    days_paid: int = Field(examples=[3])
-    server_ip: str = Field(examples=["127.0.0.1"])
-    server_location: str = Field(examples=["San Francisco, USA"])
+    trans_id: str = Field(examples=["vpn-123456789"])
+    # days_paid: int = Field(examples=[3])
+    # server_ip: str = Field(examples=["127.0.0.1"])
+    # server_location: str = Field(examples=["San Francisco, USA"])
 
 
 class get_config_pydantic_model(BaseModel):
