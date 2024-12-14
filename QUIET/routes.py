@@ -610,7 +610,8 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
         location=get_server.location,
         days_paid=data["days_paid"],
         email=check_user.email,
-        username=check_user.username
+        username=check_user.username,
+        amount=str(amount_format)
     )
     db.add(new_transaction)
     db.commit()
