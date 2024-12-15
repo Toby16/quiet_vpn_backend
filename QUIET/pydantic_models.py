@@ -29,8 +29,33 @@ class verify_otp_model(BaseModel):
 class change_password_model(BaseModel):
     password: str = Field(examples=["changedtestpassword"])
 
+class create_payment_pydantic_model(BaseModel):
+    days_paid: int = Field(examples=[3])
+    server_ip: str = Field(examples=["127.0.0.1"])
+    redirect_url: str = Field(examples=["https://google.com/"])
+    
+# PAYSTACK PAYMENT
+class paystack_payment_pydantic_model(BaseModel):
+    trans_id: str = Field(examples=["vpn-123456789"])
+    """
+    days_paid: int = Field(examples=[3])
+    server_ip: str = Field(examples=["127.0.0.1"])
+    redirect_url: str = Field(examples=["https://google.com/"])
+    """
 
-# FLUTTERWAVE PAYMENT
+class verify_paystack_payment_pydantic_model(BaseModel):
+    # transaction_id: str = Field(examples=["vyc5twin3j"])
+    trans_id: str = Field(examples=["vpn-123456789"])
+    # days_paid: int = Field(examples=[3])
+    # server_ip: str = Field(examples=["127.0.0.1"])
+    # server_location: str = Field(examples=["San Francisco, USA"])
+
+class get_config_pydantic_model(BaseModel):
+    ip_address: str = Field(examples=["127.0.0.1"])
+
+
+
+#  [ MISC ] FLUTTERWAVE PAYMENT
 class flutterwave_payment_pydantic_model(BaseModel):
     days_paid: int = Field(examples=[3])
     server_ip: str = Field(examples=["127.0.0.1"])
@@ -42,20 +67,3 @@ class verify_flutterwave_payment_pydantic_model(BaseModel):
     days_paid: int = Field(examples=[3])
     server_ip: str = Field(examples=["127.0.0.1"])
     server_location: str = Field(examples=["San Francisco, USA"])
-
-# PAYSTACK PAYMENT
-class paystack_payment_pydantic_model(BaseModel):
-    days_paid: int = Field(examples=[3])
-    server_ip: str = Field(examples=["127.0.0.1"])
-    redirect_url: str = Field(examples=["https://google.com/"])
-
-class verify_paystack_payment_pydantic_model(BaseModel):
-    transaction_id: str = Field(examples=["vyc5twin3j"])
-    trans_id: str = Field(examples=["vpn-123456789"])
-    # days_paid: int = Field(examples=[3])
-    # server_ip: str = Field(examples=["127.0.0.1"])
-    # server_location: str = Field(examples=["San Francisco, USA"])
-
-
-class get_config_pydantic_model(BaseModel):
-    ip_address: str = Field(examples=["127.0.0.1"])
