@@ -316,12 +316,6 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
         raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
     """
 
-    """
-    headers = {
-        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-        "Content-Type": "application/json"
-    }
-    """
     data = data.dict()
 
     # depending on ip, query db to get price per day
@@ -344,11 +338,55 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
     if len(amount_format) <= 0:
         amount_format = data["amount"]
 
+    trans_id_val = "vpn-{}".format(randint(100000000, 999999999))
+    # store new transaction to db
+    new_transaction = transaction(
+        trans_id=trans_id_val,
+        trans_status=False,
+        server_ip=get_server.server_ip,
+        location=get_server.location,
+        days_paid=data["days_paid"],
+        email=check_user.email,
+        username=check_user.username,
+        amount=str(amount_format),
+        expired=False
+    )
+    db.add(new_transaction)
+    db.commit()
+
+    return {
+        "statusCode": 200,
+        "message": "Payment created successfully",
+        "trans_id": trans_id_val
+    }
+
+
+# [ PAYSTACK PAYMENT ]
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
+PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
+
+@app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency):
+    check_trans_id = db.query(transaction).filter(transaction.trans_id == data.trans_id).first()
+    if check_trans_id is None:
+        raise HTTPException(status_code=404, detail={"err": "transaction now found!"})
+
+    headers = {
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+    # data = data.dict()
+
+    # depending on ip, query db to get price per day
+    get_server = db.query(servers).filter(servers.server_ip == check_trans_id.server_ip).first()
+    if get_server is None:
+        raise HTTPException(status_code=500, detail="server not found!")
+
     # paystack payment payload
-    """
     payload = {
-        "amount": str(int(amount_format) * 100 * int(data["days_paid"])),
-        "email": check_user.email,
+        "amount": str(int(check_trans_id.amount) * 100 * int(check_trans_id.days_paid)),
+        "email": check_trans_id.email,
         "currency": "NGN",
         "callback_url": data["redirect_url"]
     }
@@ -382,18 +420,14 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
     )
     db.add(new_transaction)
     db.commit()
-
-    # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
+    """
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
-        "trans_id": trans_id_val,
-        # "user": check_user.username,
-        # "days_paid": data["days_paid"],
-        # "server_ip": data["server_ip"],
-        # "server_location": get_server.location,
-        # "response": response
+        "trans_id": check_trans_id.trans_id,
+        "response": response
     }
+
 
 
 
