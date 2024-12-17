@@ -46,6 +46,7 @@ class paystack_payment_pydantic_model(BaseModel):
 
 class verify_paystack_payment_pydantic_model(BaseModel):
     trans_id: str = Field(examples=["vpn-123456789"])
+    transaction_id: str = Field(examples=["guop07llk0"])
 
 
 class get_config_pydantic_model(BaseModel):
