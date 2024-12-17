@@ -292,8 +292,8 @@ def change_password(
 
 
 
-@app.post("/payment/create", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/create/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/create/test", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/create/test/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def create_payment(data: create_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     try:
@@ -365,9 +365,9 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
 
-@app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency):
+@app.post("/payment/paystack/test", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/test/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def create_payment_paystack_(data: paystack_payment_pydantic_model, db: db_dependency):
     check_trans_id = db.query(transaction).filter(transaction.trans_id == data.trans_id).first()
     if check_trans_id is None:
         raise HTTPException(status_code=404, detail={"err": "transaction now found!"})
