@@ -32,11 +32,12 @@ class change_password_model(BaseModel):
 class create_payment_pydantic_model(BaseModel):
     days_paid: int = Field(examples=[3])
     server_ip: str = Field(examples=["127.0.0.1"])
-    redirect_url: str = Field(examples=["https://google.com/"])
+    # redirect_url: str = Field(examples=["https://google.com/"])
 
 # PAYSTACK PAYMENT
 class paystack_payment_pydantic_model(BaseModel):
     trans_id: str = Field(examples=["vpn-123456789"])
+    redirect_url: str = Field(examples=["https://google.com/"])
     """
     days_paid: int = Field(examples=[3])
     server_ip: str = Field(examples=["127.0.0.1"])
