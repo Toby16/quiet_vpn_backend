@@ -11,12 +11,11 @@ from QUIET.helper import (
 )
 from QUIET.pydantic_models import (
     signup_User, signin_User, update_user_model,
-    flutterwave_payment_pydantic_model,
-    verify_flutterwave_payment_pydantic_model,
     paystack_payment_pydantic_model,
     verify_paystack_payment_pydantic_model,
     send_otp_model, verify_otp_model,
-    change_password_model, get_config_pydantic_model
+    change_password_model, get_config_pydantic_model,
+    create_payment_pydantic_model
 )
 
 from typing import Annotated
@@ -292,13 +291,10 @@ def change_password(
     }
 
 
-# [ FLUTTERWAVE PAYMENT ]
-FLW_SECRET_KEY = os.getenv('FLW_SECRET_KEY')
-FLW_BASE_URL = 'https://api.flutterwave.com/v3'
 
-@app.post("/payment/flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
+@app.post("/payment/create", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/create/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def create_payment(data: create_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     try:
         payload = decode_jwt(token)
@@ -320,63 +316,47 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
         raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
     """
 
+    """
     headers = {
-        "Authorization": f"Bearer {FLW_SECRET_KEY}",
+        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
         "Content-Type": "application/json"
     }
-
+    """
     data = data.dict()
-    data["tx_ref"] = "REF-{}".format(randint(100000000, 999999999))
-    data["currency"] = "NGN"
-    data["payment_options"] = "card, account, googlepay, applepay"
 
     # depending on ip, query db to get price per day
     get_server = db.query(servers).filter(servers.server_ip == data["server_ip"]).first()
-
     if get_server is None:
         raise HTTPException(status_code=500, detail="server not found!")
 
     # if price exists for the server
     data["amount"] = str(get_server.price)
-
     amount_format = ""
 
     if "," in data["amount"]:
         amount_format = (data["amount"]).replace(",","")
     elif (data["amount"]).endswith(".00"):
         amount_format = data["amount"][:-3]
-
     if amount_format.endswith(".00"):
         amount_format = amount_format[:-3]
     elif "," in amount_format:
         amount_format = (amount_format).replace(",","")
-
     if len(amount_format) <= 0:
         amount_format = data["amount"]
 
-    # flutterwave payment payload
+    # paystack payment payload
+    """
     payload = {
-        "tx_ref": data["tx_ref"],
-        # "amount": int(amount_format) * per_dollar,
-        "amount": int(amount_format) * int(data["days_paid"]),
-        "currency": data["currency"],
-        "redirect_url": data["redirect_url"],
-        "payment_options": data["payment_options"],
-        "customer": {
-            "email": check_user.email,
-            "name": "{}".format(check_user.username)
-        },
-        "customizations": {
-            "title": "QUIET VPN Inc.",
-            "logo": "https://luravpn.nyc3.digitaloceanspaces.com/country_icon/.misc/security.png"
-        }
+        "amount": str(int(amount_format) * 100 * int(data["days_paid"])),
+        "email": check_user.email,
+        "currency": "NGN",
+        "callback_url": data["redirect_url"]
     }
-
 
     try:
         with httpx.Client(timeout=Timeout(60.0)) as client:
             # set timeout to 60 seconds
-            response = client.post(f"{FLW_BASE_URL}/payments", json=payload, headers=headers)
+            response = client.post(f"{PAYSTACK_BASE_URL}/initialize", json=payload, headers=headers)
     except httpx.TimeoutException as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
@@ -384,145 +364,37 @@ def create_payment_flutterwave(data: flutterwave_payment_pydantic_model, db: db_
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.json())
+
+    response = (response.json())["data"]
+    """
+    trans_id_val = "vpn-{}".format(randint(100000000, 999999999))
+    # store new transaction to db
+    new_transaction = transaction(
+        trans_id=trans_id_val,
+        trans_status=False,
+        server_ip=get_server.server_ip,
+        location=get_server.location,
+        days_paid=data["days_paid"],
+        email=check_user.email,
+        username=check_user.username,
+        amount=str(amount_format),
+        expired=False
+    )
+    db.add(new_transaction)
+    db.commit()
 
     # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
-        "user": check_user.username,
-        "days_paid": data["days_paid"],
-        "server_ip": data["server_ip"],
-        "server_location": get_server.location,
-        "data": (response.json())["data"]
+        "trans_id": trans_id_val,
+        # "user": check_user.username,
+        # "days_paid": data["days_paid"],
+        # "server_ip": data["server_ip"],
+        # "server_location": get_server.location,
+        # "response": response
     }
 
-@app.post("/payment/verify_flutterwave", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/verify_flutterwave/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def verify_payment_flutterwave(data: verify_flutterwave_payment_pydantic_model, db: db_dependency):
-    username = data.username
-
-    #  [ QUERY DB TO CONFIRM USER EXISTS ]
-    check_user = db.query(User).filter(User.username == username).first()
-    if check_user is None:
-        raise HTTPException(status_code=404, detail={"err": "Account not found!"})
-
-    token = None
-    token_obj = {
-        "email": check_user.email,
-        "username": check_user.username
-    }
-
-    """
-    if check_user.is_activated is False:
-        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
-    """
-
-    headers = {
-        "Authorization": f"Bearer {FLW_SECRET_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        # for flutterwave
-        with httpx.Client(timeout=Timeout(60.0)) as client:
-            # set timeout to 60 seconds
-            response = client.get("{FLW_BASE_URL}/transactions/{transaction_id}/verify".format(
-                FLW_BASE_URL=FLW_BASE_URL, transaction_id=data.transaction_id
-            ), headers=headers)
-    except httpx.TimeoutException as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
-
-    data_ = {}
-    output_ = (response.json())["data"]
-    output_customer = (response.json())["data"]["customer"]
-    
-    data_["id"] = output_["id"] or None
-    data_["status"] = output_["status"] or None
-    data_["tx_ref"] = output_["tx_ref"] or None
-    data_["flw_ref"] = output_["flw_ref"] or None
-    data_["amount"] = output_["amount"] or None
-    data_["currency"] = output_["currency"] or None
-    data_["payment_type"] = output_["payment_type"] or None
-    data_["username"] = output_customer["name"] or None
-    data_["email"] = output_customer["email"] or None
-
-    if data_["status"] == "successful":
-        try:
-            with httpx.Client(timeout=Timeout(60.0)) as client:
-                # set timeout to 50 seconds
-                response_2 = client.get("http://{server_ip}/create_peer/".format(
-                    server_ip=data.server_ip
-                ), headers={"Content-Type": "application/json"})
-
-                bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
-        except httpx.TimeoutException as e:
-            # raise
-            raise HTTPException(status_code=500, detail=str(e))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(data.server_ip))
-    else:
-        return {
-            "statusCode": 400,
-            "err": "Payment Not Successful!",
-            "message": "Payment Not Successful!"
-        }
-
-    try:
-        # Save the config, server_ip, and days_paid to user_config table
-        user_config_obj = db.query(user_config).filter(
-            user_config.email == check_user.email,
-            user_config.server_ip == data.server_ip  # Match the server_ip as well
-        ).first()
-
-        if not user_config_obj:
-            # If no record exists, create a new one
-            user_config_obj = user_config(
-                email=check_user.email,
-                server_ip=data.server_ip,
-                config=response_2.json()["data"]["client_id"],  # Assuming the config name is in the response
-                days_paid=int(data.days_paid) + 1
-            )
-            db.add(user_config_obj)
-        else:
-            # If a record exists, replace the existing one
-            # Delete from vpn server
-            try:
-                with httpx.Client(timeout=Timeout(60.0)) as client:
-                    response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=data.server_ip,
-                                             config_file=user_config_obj.config),
-                                             headers={"Content-Type": "application/json"}
-                                         )
-            except httpx.TimeoutException as e:
-                pass
-                # raise HTTPException(status_code=500, detail=str(e))
-
-            # Replace in DB
-            user_config_obj.server_ip = data.server_ip
-            user_config_obj.config = response_2.json()["data"]["client_id"]  # Assuming the config name is in the response
-            user_config_obj.days_paid += int(data.days_paid) + 1  # add up the remaining days with the new one
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    # Commit the changes
-    db.commit()
-    token = generate_token(token_obj)  # generate user token
-
-    return {
-        "statusCode": 200,
-        "token": token,
-        "days_paid": data.days_paid,
-        "server_ip": data.server_ip,
-        "server_location": data.server_location,
-        "data": data_,
-        "config_data": response_2.json()["data"]
-    }
 
 
 
