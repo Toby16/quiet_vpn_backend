@@ -292,8 +292,8 @@ def change_password(
 
 
 
-@app.post("/payment/create/test", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/create/test/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/create", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/create/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def create_payment(data: create_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
     # [ DECODE JWT ]
     try:
@@ -365,9 +365,9 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
 
-@app.post("/payment/paystack/test", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/paystack/test/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def create_payment_paystack_(data: paystack_payment_pydantic_model, db: db_dependency):
+@app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+@app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
+def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency):
     check_trans_id = db.query(transaction).filter(transaction.trans_id == data.trans_id).first()
     if check_trans_id is None:
         raise HTTPException(status_code=404, detail={"err": "transaction now found!"})
@@ -376,7 +376,6 @@ def create_payment_paystack_(data: paystack_payment_pydantic_model, db: db_depen
         "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
         "Content-Type": "application/json"
     }
-    # data = data.dict()
 
     # depending on ip, query db to get price per day
     get_server = db.query(servers).filter(servers.server_ip == check_trans_id.server_ip).first()
@@ -404,23 +403,6 @@ def create_payment_paystack_(data: paystack_payment_pydantic_model, db: db_depen
         raise HTTPException(status_code=response.status_code, detail=response.json())
 
     response = (response.json())["data"]
-    """
-    trans_id_val = "vpn-{}".format(randint(100000000, 999999999))
-    # store new transaction to db
-    new_transaction = transaction(
-        trans_id=trans_id_val,
-        trans_status=False,
-        server_ip=get_server.server_ip,
-        location=get_server.location,
-        days_paid=data["days_paid"],
-        email=check_user.email,
-        username=check_user.username,
-        amount=str(amount_format),
-        expired=False
-    )
-    db.add(new_transaction)
-    db.commit()
-    """
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
@@ -428,112 +410,6 @@ def create_payment_paystack_(data: paystack_payment_pydantic_model, db: db_depen
         "response": response
     }
 
-
-
-
-
-# [ PAYSTACK PAYMENT ]
-PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
-PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
-
-@app.post("/payment/paystack", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-@app.post("/payment/paystack/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
-def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency, token: str = Depends(get_token)):
-    # [ DECODE JWT ]
-    try:
-        payload = decode_jwt(token)
-        token_expiry = payload.pop("expires")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid Token!")
-
-    # [ CHECK TOKEN EXPIRY ]
-    if token_expiry <= time.time():
-        raise HTTPException(status_code=400, detail={"err": "Token Expired! Kindly login again!"})
-
-    #  [ QUERY DB TO CONFIRM USER EXISTS ]
-    check_user = db.query(User).filter(User.email == payload["email"]).first()
-    if check_user is None:
-        raise HTTPException(status_code=404, detail={"err": "Account not found!"})
-
-    """
-    if check_user.is_activated is False:
-        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
-    """
-
-    headers = {
-        "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = data.dict()
-
-    # depending on ip, query db to get price per day
-    get_server = db.query(servers).filter(servers.server_ip == data["server_ip"]).first()
-    if get_server is None:
-        raise HTTPException(status_code=500, detail="server not found!")
-
-    # if price exists for the server
-    data["amount"] = str(get_server.price)
-    amount_format = ""
-
-    if "," in data["amount"]:
-        amount_format = (data["amount"]).replace(",","")
-    elif (data["amount"]).endswith(".00"):
-        amount_format = data["amount"][:-3]
-    if amount_format.endswith(".00"):
-        amount_format = amount_format[:-3]
-    elif "," in amount_format:
-        amount_format = (amount_format).replace(",","")
-    if len(amount_format) <= 0:
-        amount_format = data["amount"]
-
-    # paystack payment payload
-    payload = {
-        "amount": str(int(amount_format) * 100 * int(data["days_paid"])),
-        "email": check_user.email,
-        "currency": "NGN",
-        "callback_url": data["redirect_url"]
-    }
-
-    try:
-        with httpx.Client(timeout=Timeout(60.0)) as client:
-            # set timeout to 60 seconds
-            response = client.post(f"{PAYSTACK_BASE_URL}/initialize", json=payload, headers=headers)
-    except httpx.TimeoutException as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.json())
-
-    response = (response.json())["data"]
-    trans_id_val = "vpn-{}".format(randint(100000000, 999999999))
-    # store new transaction to db
-    new_transaction = transaction(
-        trans_id=trans_id_val,
-        trans_status=False,
-        server_ip=get_server.server_ip,
-        location=get_server.location,
-        days_paid=data["days_paid"],
-        email=check_user.email,
-        username=check_user.username,
-        amount=str(amount_format),
-        expired=False
-    )
-    db.add(new_transaction)
-    db.commit()
-
-    # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
-    return {
-        "statusCode": 200,
-        "message": "Payment created successfully",
-        "trans_id": trans_id_val,
-        # "user": check_user.username,
-        # "days_paid": data["days_paid"],
-        # "server_ip": data["server_ip"],
-        # "server_location": get_server.location,
-        "response": response
-    }
 
 # [ VERIFY PAYSTACK PAYMENT ]
 @app.post("/payment/paystack/verify", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
@@ -669,14 +545,6 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         "config_data": response_2.json()["data"]
     }
 
-    """
-    # return PaymentResponse(status="success", message="Payment created successfully", data=response.json())
-    return {
-        "statusCode": 200,
-        # "response": response.json(),
-        "data": response
-    }
-    """
 
 
 
