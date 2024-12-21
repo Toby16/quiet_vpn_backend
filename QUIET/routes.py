@@ -311,10 +311,11 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
 
-    """
-    if check_user.is_activated is False:
-        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
-    """
+    token = None
+    token_obj = {
+        "email": check_user.email,
+        "username": check_user.username
+    }
 
     data = data.dict()
 
@@ -353,11 +354,13 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
     )
     db.add(new_transaction)
     db.commit()
+    token = generate_token(token_obj)  # generate user token
 
     return {
         "statusCode": 200,
         "message": "Payment created successfully",
-        "trans_id": trans_id_val
+        "trans_id": trans_id_val,
+        "token": token
     }
 
 
@@ -427,12 +430,6 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     check_user = db.query(User).filter(User.username == username).first()
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
-
-    token = None
-    token_obj = {
-        "email": check_user.email,
-        "username": check_user.username
-    }
 
     """
     if check_user.is_activated is False:
@@ -533,11 +530,9 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     # Commit the changes
     check_transaction.trans_status = True
     db.commit()
-    token = generate_token(token_obj)  # generate user token
 
     return {
         "statusCode": 200,
-        "token": token,
         "days_paid": check_transaction.days_paid,
         "server_ip": check_transaction.server_ip,
         "server_location": check_transaction.location,
