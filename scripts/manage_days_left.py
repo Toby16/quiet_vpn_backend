@@ -16,7 +16,7 @@ import httpx
 from httpx import Timeout
 from datetime import datetime
 from sqlalchemy.orm import Session
-from QUIET.models import user_configi, transaction
+from QUIET.models import user_config, transaction
 from database import engine  # Importing database engine
 
 def manage_user_configs():
