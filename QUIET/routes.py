@@ -322,7 +322,7 @@ def create_payment(data: create_payment_pydantic_model, db: db_dependency, token
     # depending on ip, query db to get price per day
     get_server = db.query(servers).filter(servers.server_ip == data["server_ip"]).first()
     if get_server is None:
-        raise HTTPException(status_code=500, detail="server not found!")
+        raise HTTPException(status_code=404, detail="server not found!")
 
     # if price exists for the server
     data["amount"] = str(get_server.price)
