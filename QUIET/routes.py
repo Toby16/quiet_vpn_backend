@@ -425,11 +425,18 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         raise HTTPException(status_code=404, detail={"err": "Transaction not found!"})
 
     username = check_transaction.username
+    
 
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
     check_user = db.query(User).filter(User.username == username).first()
     if check_user is None:
         raise HTTPException(status_code=404, detail={"err": "Account not found!"})
+
+    token = None
+    token_obj = {
+        "email": check_user.email,
+        "username": check_user.username
+    }
 
     """
     if check_user.is_activated is False:
@@ -530,9 +537,11 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     # Commit the changes
     check_transaction.trans_status = True
     db.commit()
+    token = generate_token(token_obj)  # generate user token
 
     return {
         "statusCode": 200,
+        "token": token,
         "days_paid": check_transaction.days_paid,
         "server_ip": check_transaction.server_ip,
         "server_location": check_transaction.location,
