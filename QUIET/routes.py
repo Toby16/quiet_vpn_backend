@@ -29,6 +29,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 # import jwt
+import json
 import time
 import os
 import re
@@ -536,8 +537,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                                          )
                     elif check_server.server_type == "private":
                         response_3 = client.get("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
-                                             headers={"Content-Type": "application/json"}, {"client_id": user_config_obj.config}
-                                         )
+                                             headers={"Content-Type": "application/json"}, data=json.dumps({"client_id": user_config_obj.config}))
             except httpx.TimeoutException as e:
                 # pass
                 raise HTTPException(status_code=500, detail=str(e))
