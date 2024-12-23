@@ -39,6 +39,7 @@ class servers(Base):
     location = Column(Text)
     price = Column(String(10))
     flag_url = Column(Text)
+    server_type = Column(Text)  # either 'private' or 'public'
 
 
 class user_config(Base):
