@@ -501,6 +501,17 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             # raise
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
+            if check_server.server_type == "private":
+                try:
+                    response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
+                        server_ip=check_transaction.server_ip
+                    ), headers={"Content-Type": "application/json"})
+                    
+                    bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
+                    
+                except Exception as e:
+                    pass
+                    # raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
             raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
     else:
         return {
