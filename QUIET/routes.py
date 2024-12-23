@@ -503,6 +503,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             # raise
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
+            """
             if check_server.server_type == "private":
                 try:
                     with httpx.Client(timeout=Timeout(60.0)) as client2:
@@ -515,8 +516,8 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                 except Exception as e:
                     raise
                     # raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
-            raise
-            # raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
+            """
+            raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
     else:
         return {
             "statusCode": 400,
