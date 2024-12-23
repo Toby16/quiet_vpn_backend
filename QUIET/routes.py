@@ -739,32 +739,38 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 def populatedb(db: Session = Depends(get_db)):
     data = [
         {
-            "server_ip": "134.122.107.207",
-            "location": "London, United Kingdom",
-            "price": "289.00",
-            "flag_url": "https://flagcdn.com/w320/gb.png"
+            "item_no": 0,
+            "server_ip": "5.39.254.59",
+            "location": "London, UK",
+            "price": "380.00",
+            "flag_url": "https://flagcdn.com/w320/gb.png",
+            "server_type": "private"
         },
         {
+            "item_no": 1,
             "server_ip": "67.205.128.67",
             "location": "New York, USA",
             "price": "290.00",
-            "flag_url": "https://flagcdn.com/w320/us.png"
+            "flag_url": "https://flagcdn.com/w320/us.png",
+            "server_type": "public"
         },
-        {   
+        {
+            "item_no": 2,
+            "server_ip": "134.122.107.207",
+            "location": "London, UK",
+            "price": "289.00",
+            "flag_url": "https://flagcdn.com/w320/gb.png",
+            "server_type": "public"
+        },
+        {
+            "item_no": 3,
             "server_ip": "167.99.220.220",
             "location": "Amsterdam, NL",
             "price": "255.00",
-            "flag_url": "https://flagcdn.com/w320/nl.png"
+            "flag_url": "https://flagcdn.com/w320/nl.png",
+            "server_type": "public"
         }
     ]
-    """
-        {
-            "server_ip": "67.205.128.67",
-            "location": "New York, USA",
-            "price": "290.00",
-            "flag_url": "https://flagcdn.com/w320/us.png"
-        }
-    """
 
     # Iterate over the data and populate the db
     for server_data in data:
@@ -775,7 +781,8 @@ def populatedb(db: Session = Depends(get_db)):
                 server_ip=server_data["server_ip"],
                 location=server_data["location"],
                 price=server_data["price"],
-                flag_url=server_data["flag_url"]
+                flag_url=server_data["flag_url"],
+                server_type=server_data["server_type"]
             )
             db.add(new_server)
     
