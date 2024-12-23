@@ -476,12 +476,24 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
     data_["email"] = output_customer["email"] or None
 
     if data_["status"] == "success":
+        # check server type to determine url to eb called for new client
+        check_server = db.query(servers).filter(servers.server_ip == check_transaction.server_ip).first()
+        if check_server is None:
+            raise HTTPException(status_code=404, detail={"err": "server not found!"})
+            
         try:
             with httpx.Client(timeout=Timeout(60.0)) as client:
-                # set timeout to 50 seconds
-                response_2 = client.get("http://{server_ip}/create_peer/".format(
-                    server_ip=check_transaction.server_ip
-                ), headers={"Content-Type": "application/json"})
+                # set timeout to 60 seconds
+                response_2 = None
+
+                if check_server.server_type == "public":
+                    response_2 = client.get("http://{server_ip}/create_peer/".format(
+                        server_ip=check_transaction.server_ip
+                    ), headers={"Content-Type": "application/json"})
+                elif check_server.server_type == "private":
+                    response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
+                        server_ip=check_transaction.server_ip
+                    ), headers={"Content-Type": "application/json"})
 
                 bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
         except httpx.TimeoutException as e:
@@ -517,13 +529,18 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             # Delete from vpn server
             try:
                 with httpx.Client(timeout=Timeout(60.0)) as client:
-                    response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=check_transaction.server_ip,
+                    if check_server.server_type == "public":
+                        response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=check_transaction.server_ip,
                                              config_file=user_config_obj.config),
                                              headers={"Content-Type": "application/json"}
                                          )
+                    elif check_server.server_type == "private":
+                        response_3 = client.get("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
+                                             headers={"Content-Type": "application/json"}, {"client_id": user_config_obj.config}
+                                         )
             except httpx.TimeoutException as e:
-                pass
-                # raise HTTPException(status_code=500, detail=str(e))
+                # pass
+                raise HTTPException(status_code=500, detail=str(e))
 
             # Replace in DB
             user_config_obj.server_ip = check_transaction.server_ip
