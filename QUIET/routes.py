@@ -483,18 +483,20 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             raise HTTPException(status_code=404, detail={"err": "server not found!"})
             
         try:
-            with httpx.Client(timeout=Timeout(60.0)) as client:
+            # with httpx.Client(timeout=Timeout(60.0)) as client:
                 # set timeout to 60 seconds
                 response_2 = None
 
                 if check_server.server_type == "public":
-                    response_2 = client.get("http://{server_ip}/create_peer/".format(
-                        server_ip=check_transaction.server_ip
-                    ), headers={"Content-Type": "application/json"})
+                    with httpx.Client(timeout=Timeout(60.0)) as client:
+                        response_2 = client.get("http://{server_ip}/create_peer/".format(
+                            server_ip=check_transaction.server_ip
+                        ), headers={"Content-Type": "application/json"})
                 elif check_server.server_type == "private":
-                    response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
-                        server_ip=check_transaction.server_ip
-                    ), headers={"Content-Type": "application/json"})
+                    with httpx.Client(timeout=Timeout(60.0)) as client:
+                        response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
+                            server_ip=check_transaction.server_ip
+                        ), headers={"Content-Type": "application/json"})
 
                 bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
         except httpx.TimeoutException as e:
