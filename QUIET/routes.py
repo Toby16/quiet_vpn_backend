@@ -511,9 +511,10 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                         bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
                     
                 except Exception as e:
-                    pass
+                    raise
                     # raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
-            raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
+            raise
+            # raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
     else:
         return {
             "statusCode": 400,
