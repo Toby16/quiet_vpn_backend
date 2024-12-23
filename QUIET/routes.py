@@ -374,7 +374,7 @@ PAYSTACK_BASE_URL = "https://api.paystack.co/transaction"
 def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_dependency):
     check_trans_id = db.query(transaction).filter(transaction.trans_id == data.trans_id).first()
     if check_trans_id is None:
-        raise HTTPException(status_code=404, detail={"err": "transaction now found!"})
+        raise HTTPException(status_code=404, detail={"err": "transaction not found!"})
 
     headers = {
         "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
