@@ -503,11 +503,12 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         except Exception as e:
             if check_server.server_type == "private":
                 try:
-                    response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
-                        server_ip=check_transaction.server_ip
-                    ), headers={"Content-Type": "application/json"})
+                    with httpx.Client(timeout=Timeout(60.0)) as client2:
+                        response_2 = client2.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
+                            server_ip=check_transaction.server_ip
+                        ), headers={"Content-Type": "application/json"})
                     
-                    bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
+                        bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
                     
                 except Exception as e:
                     pass
