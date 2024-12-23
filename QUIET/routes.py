@@ -536,7 +536,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                                              headers={"Content-Type": "application/json"}
                                          )
                     elif check_server.server_type == "private":
-                        response_3 = client.get("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
+                        response_3 = client.post("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
                                              headers={"Content-Type": "application/json"}, data=json.dumps({"client_id": user_config_obj.config}))
             except httpx.TimeoutException as e:
                 # pass
