@@ -486,12 +486,6 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                             server_ip=check_transaction.server_ip
                         ), headers={"Content-Type": "application/json"})
 
-                    while response_2.status_code != 200:
-                        with httpx.Client(timeout=Timeout(60.0)) as client:
-                            response_2 = client.get("http://{server_ip}/create_peer/".format(
-                                server_ip=check_transaction.server_ip
-                            ), headers={"Content-Type": "application/json"})
-
                     bin_val = response_2.json()
                 elif check_server.server_type == "private":
                     with httpx.Client(timeout=Timeout(60.0)) as client:
