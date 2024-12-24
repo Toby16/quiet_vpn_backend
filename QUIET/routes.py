@@ -566,7 +566,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         "server_ip": check_transaction.server_ip,
         "server_location": check_transaction.location,
         "data": data_,
-        "config_data": response_2.json()["data"]
+        "config_data": bin_val  # response_2.json()["data"]
     }
 
 
