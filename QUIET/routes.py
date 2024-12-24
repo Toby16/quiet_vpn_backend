@@ -500,10 +500,10 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                             ), headers={"Content-Type": "application/json"})
 
                     bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
+                    bin_val.pop("server_id", None)  # Remove the "server_id" key if it exists
         except httpx.TimeoutException as e:
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
-            raise
             raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
     else:
         return {
