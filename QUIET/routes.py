@@ -420,14 +420,11 @@ def create_payment_paystack(data: paystack_payment_pydantic_model, db: db_depend
 @app.post("/payment/paystack/verify/", status_code=status.HTTP_200_OK, tags=["PAYMENT"])
 def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db_dependency):
     trans_id = data.trans_id  # transaction id to validate payment on the backend
-
     check_transaction = db.query(transaction).filter(transaction.trans_id == trans_id).first()
     if check_transaction is None:
         raise HTTPException(status_code=404, detail={"err": "Transaction not found!"})
 
     username = check_transaction.username
-    
-
     #  [ QUERY DB TO CONFIRM USER EXISTS ]
     check_user = db.query(User).filter(User.username == username).first()
     if check_user is None:
@@ -439,16 +436,11 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         "username": check_user.username
     }
 
-    """
-    if check_user.is_activated is False:
-        raise HTTPException(status_code=400, detail={"err": "Kindly activate your account!"})
-    """
-
     headers = {
         "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"
     }
 
-    # data = data.dict()
+    # verify paystack payment via transaction_id
     try:
         with httpx.Client(timeout=Timeout(60.0)) as client:
             # set timeout to 60 seconds
@@ -486,37 +478,25 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             # with httpx.Client(timeout=Timeout(60.0)) as client:
                 # set timeout to 60 seconds
                 response_2 = None
+                bin_val = None
 
                 if check_server.server_type == "public":
                     with httpx.Client(timeout=Timeout(60.0)) as client:
                         response_2 = client.get("http://{server_ip}/create_peer/".format(
                             server_ip=check_transaction.server_ip
                         ), headers={"Content-Type": "application/json"})
-                elif check_server.server_type == "private":
-                    with httpx.Client(timeout=Timeout(60.0)) as client:
-                        response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
-                            server_ip=check_transaction.server_ip
-                        ), headers={"Content-Type": "application/json"})
 
-                bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
+                        bin_val = response_2.json()
+                elif check_server.server_type == "private":
+                    while response_2.status_code != 200:
+                        with httpx.Client(timeout=Timeout(60.0)) as client:
+                            response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
+                                server_ip=check_transaction.server_ip
+                            ), headers={"Content-Type": "application/json"})
+                    bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
         except httpx.TimeoutException as e:
-            # raise
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
-            """
-            if check_server.server_type == "private":
-                try:
-                    with httpx.Client(timeout=Timeout(60.0)) as client2:
-                        response_2 = client2.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
-                            server_ip=check_transaction.server_ip
-                        ), headers={"Content-Type": "application/json"})
-                    
-                        bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
-                    
-                except Exception as e:
-                    raise
-                    # raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
-            """
             raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
     else:
         return {
