@@ -507,8 +507,8 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
 
                     bin_val = response_2.json()  # to confirm if request was sent to a valid ip_address
                     bin_val["data"].pop("server_id", None)  # Remove the "server_id" key if it exists
-                    client_id_value = bin_val.pop("client_id", None)
-                    bin_val["data"]["client_id"] = client_id_value
+                    # client_id_value = bin_val.pop("client_id", None)
+                    # bin_val["data"]["client_id"] = client_id_value
                     bin_val["message"] = "success"
         except httpx.TimeoutException as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -581,7 +581,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         "server_ip": check_transaction.server_ip,
         "server_location": check_transaction.location,
         "data": data_,
-        "config_data": bin_val  # response_2.json()["data"]
+        "config_data": bin_val  # response_2.json()["data"],
     }
 
 
