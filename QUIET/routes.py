@@ -486,7 +486,13 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
                             server_ip=check_transaction.server_ip
                         ), headers={"Content-Type": "application/json"})
 
-                        bin_val = response_2.json()
+                    while response_2.status_code != 200:
+                        with httpx.Client(timeout=Timeout(60.0)) as client:
+                            response_2 = client.get("http://{server_ip}/create_peer/".format(
+                                server_ip=check_transaction.server_ip
+                            ), headers={"Content-Type": "application/json"})
+
+                    bin_val = response_2.json()
                 elif check_server.server_type == "private":
                     with httpx.Client(timeout=Timeout(60.0)) as client:
                         response_2 = client.get("https://wgvpn.luravpn.com:5000/wg/create_client?ipv4={server_ip}".format(
@@ -532,18 +538,24 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
             # If a record exists, replace the existing one
             # Delete from vpn server
             try:
-                with httpx.Client(timeout=Timeout(60.0)) as client:
+                # with httpx.Client(timeout=Timeout(60.0)) as client:
                     if check_server.server_type == "public":
-                        response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=check_transaction.server_ip,
+                        with httpx.Client(timeout=Timeout(60.0)) as client:
+                            response_3 = client.get("http://{server_ip}/revoke_peer/{config_file}/".format(server_ip=check_transaction.server_ip,
                                              config_file=user_config_obj.config),
                                              headers={"Content-Type": "application/json"}
                                          )
                     elif check_server.server_type == "private":
-                        response_3 = client.post("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
+                        with httpx.Client(timeout=Timeout(60.0)) as client:
+                            response_3 = client.post("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
                                              headers={"Content-Type": "application/json"}, data=json.dumps({"client_id": user_config_obj.config}))
+                        while response_2.status_code != 200:
+                            with httpx.Client(timeout=Timeout(60.0)) as client:
+                                response_3 = client.post("https://wgvpn.luravpn.com:5000/wg/revoke_client?ipv4={server_ip}".format(server_ip=check_transaction.server_ip),
+                                    headers={"Content-Type": "application/json"}, data=json.dumps({"client_id": user_config_obj.config}))
             except httpx.TimeoutException as e:
-                # pass
-                raise HTTPException(status_code=500, detail=str(e))
+                pass
+                # raise HTTPException(status_code=500, detail=str(e))
 
             # Replace in DB
             user_config_obj.server_ip = check_transaction.server_ip
