@@ -497,6 +497,7 @@ def verify_paystack_payment(data: verify_paystack_payment_pydantic_model, db: db
         except httpx.TimeoutException as e:
             raise HTTPException(status_code=500, detail=str(e))
         except Exception as e:
+            raise
             raise HTTPException(status_code=500, detail="invalid request! check server: {}".format(check_transaction.server_ip))
     else:
         return {
