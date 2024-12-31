@@ -7,7 +7,9 @@ app = FastAPI()
 origins = [
     "https://security.ghostroute.io",
     "http://localhost:5173",
-    "https://quiet-vpn-frontend.vercel.app"
+    "https://quiet-vpn-frontend.vercel.app",
+    "https://quiet.pumpeet.me/payment/paystack/",
+    "https://quiet.pumpeet.me/"
 ]
 """
 origins = ["*"]
