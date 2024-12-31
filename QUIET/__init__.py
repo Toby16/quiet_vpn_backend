@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 # List of allowed origins
-"""
 origins = [
     "https://security.ghostroute.io",
     "http://localhost:5173",
@@ -12,6 +11,7 @@ origins = [
 ]
 """
 origins = ["*"]
+"""
 
 app.add_middleware(
     CORSMiddleware,
