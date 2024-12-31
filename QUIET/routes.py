@@ -767,38 +767,78 @@ def get_user_current_plan(db: db_dependency, token: str = Depends(get_token)):
 @app.get("/populate_db_with_server_info", status_code=status.HTTP_200_OK, tags=["MISC"])
 def populatedb(db: Session = Depends(get_db)):
     data = [
+    {
+        "item_no": 0,
+        "server_ip": "157.245.85.1",
+        "location": "New York, United States",
+        "price": "395.99",
+        "flag_url": "https://flagcdn.com/w320/us.png",
+        "server_type": "public"
+    },
+    {
+        "item_no": 1,
+        "server_ip": "64.23.241.107",
+        "location": "San Francisco, United States",
+        "price": "395.50",
+        "flag_url": "https://flagcdn.com/w320/us.png",
+        "server_type": "public"
+    },
+    {
+        "item_no": 2,
+        "server_ip": "134.122.107.207",
+        "location": "London, United Kingdom",
+        "price": "395.99",
+        "flag_url": "https://flagcdn.com/w320/gb.png",
+        "server_type": "public"
+    },
+    {
+        "item_no": 3,
+        "server_ip": "170.64.210.242",
+        "location": "Sydney, Australia",
+        "price": "270.99",
+        "flag_url": "https://flagcdn.com/w320/au.png",
+        "server_type": "public"
+    },
+    {
+        "item_no": 4,
+        "server_ip": "138.197.153.90",
+        "location": "Toronto, Canada",
+        "price": "355.99",
+        "flag_url": "https://flagcdn.com/w320/ca.png",
+        "server_type": "public"
+    },
+    {
+        "item_no": 5,
+        "server_ip": "157.230.110.79",
+        "location": "Frankfurt, Germany",
+        "price": "360.00",
+        "flag_url": "https://flagcdn.com/w320/de.png",
+        "server_type": "public"
+    },
         {
-            "item_no": 0,
-            "server_ip": "5.39.254.59",
-            "location": "London, UK",
-            "price": "380.00",
-            "flag_url": "https://flagcdn.com/w320/gb.png",
-            "server_type": "private"
-        },
+        "item_no": 6,
+        "server_ip": "167.99.220.220",
+        "location": "Amsterdam, Netherlands",
+        "price": "259.99",
+        "flag_url": "https://flagcdn.com/w320/nl.png",
+        "server_type": "public"
+    },
         {
-            "item_no": 1,
-            "server_ip": "67.205.128.67",
-            "location": "New York, USA",
-            "price": "290.00",
-            "flag_url": "https://flagcdn.com/w320/us.png",
-            "server_type": "public"
-        },
-        {
-            "item_no": 2,
-            "server_ip": "134.122.107.207",
-            "location": "London, UK",
-            "price": "289.00",
-            "flag_url": "https://flagcdn.com/w320/gb.png",
-            "server_type": "public"
-        },
-        {
-            "item_no": 3,
-            "server_ip": "167.99.220.220",
-            "location": "Amsterdam, NL",
-            "price": "255.00",
-            "flag_url": "https://flagcdn.com/w320/nl.png",
-            "server_type": "public"
-        }
+        "item_no": 7,
+        "server_ip": "152.42.248.136",
+        "location": "Singapore",
+        "price": "259.99",
+        "flag_url": "https://flagcdn.com/w320/sg.png",
+        "server_type": "public"
+    },
+    {
+        "item_no": 8,
+        "server_ip": "142.93.210.2",
+        "location": "Bengaluru, India",
+        "price": "295.00",
+        "flag_url": "https://flagcdn.com/w320/in.png",
+        "server_type": "public"
+    }
     ]
 
     # Iterate over the data and populate the db
